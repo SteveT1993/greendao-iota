@@ -1,0 +1,77 @@
+name: Setup IOTA Development Environment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  setup-rust-and-iota:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Cache Rust toolchain
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rustup
+          ~/.cargo
+        key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-rust-
+
+    - name: Install Rust and Cargo
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+        rustup update stable
+
+    - name: Verify Rust installation
+      run: |
+        source $HOME/.cargo/env
+        rustc --version
+        cargo --version
+
+    - name: Cache IOTA build
+      uses: actions/cache@v4
+      id: iota-cache
+      with:
+        path: |
+          /tmp/iota-build
+        key: ${{ runner.os }}-iota-${{ hashFiles('.github/workflows/setup-environment.yml') }}
+
+    - name: Build IOTA CLI (if not cached)
+      if: steps.iota-cache.outputs.cache-hit != 'true'
+      run: |
+        source $HOME/.cargo/env
+        mkdir -p /tmp/iota-build
+        cd /tmp/iota-build
+        git clone https://github.com/iotaledger/iota.git
+        cd iota
+        cargo build --release --bin iota
+        
+    - name: Install IOTA CLI
+      run: |
+        source $HOME/.cargo/env
+        if [ -f "/tmp/iota-build/iota/target/release/iota" ]; then
+          sudo cp /tmp/iota-build/iota/target/release/iota /usr/local/bin/
+          echo "IOTA CLI installed successfully"
+        else
+          echo "IOTA binary not found"
+          exit 1
+        fi
+
+    - name: Verify IOTA installation
+      run: |
+        iota --version || echo "IOTA CLI version check completed"
+        iota --help
+
+    - name: Run verification
+      run: |
+        source $HOME/.cargo/env
+        make verify
