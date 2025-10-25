@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true
+  },
+  "include": [
+    "pages/CreateGoal/index.jsx",
+    "pages/donation/index.jsx",
+    "pages/donation/auction/index.jsx",
+    "pages/Home/index.jsx",
+    "pages/login/index.jsx",
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx", "components/components/Card/Comment.jsx", "components/components/Card/Comment.jsx", "contracts/hardhat.config.js"  ],
+  "exclude": [
+    "node_modules",
+  ]
+}
