@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes'
 import { SnackbarProvider } from "notistack";
 import { IPFSProvider } from "../contexts/IPFSContext";
 import React, { useState, useEffect } from "react";
+import { IOTAProvider } from "../contexts/IOTAContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createNetworkConfig, IotaClientProvider, WalletProvider } from '@iota/dapp-kit';
 import { getFullnodeUrl } from '@iota/iota-sdk/client';
@@ -30,7 +31,9 @@ function MyApp({ Component, pageProps }) {
 					<ThemeProvider defaultTheme={"dark"} enableColorScheme={false} attribute="class" enableSystem={false}>
 						<IotaClientProvider networks={networkConfig} defaultNetwork="testnet">
 							<WalletProvider>
+							<IOTAProvider>
 								<Component {...pageProps} />
+							</IOTAProvider>
 							</WalletProvider>
 						</IotaClientProvider>
 					</ThemeProvider>

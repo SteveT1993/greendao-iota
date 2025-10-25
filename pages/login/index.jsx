@@ -14,7 +14,6 @@ export default function Login() {
   const [ConnectStatus, setConnectStatus] = useState(false);
   // dApp Kit hooks
   const wallets = useWallets();
-  const currentAccount = useCurrentAccount();
   const connect = useConnectWallet();
 
   if (!isServer()) {

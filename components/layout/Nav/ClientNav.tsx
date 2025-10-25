@@ -5,30 +5,20 @@ import { Button } from "@heathmont/moon-core-tw";
 import { SoftwareLogOut } from "@heathmont/moon-icons-tw";
 import isServer from "../../../components/isServer";
 import { useIotaClientQuery } from '@iota/dapp-kit';
-
+import { useIOTA } from "../../../contexts/IOTAContext";
 declare let window: any;
 let running = false;
 
 export default function ClientNav() {
+  const { ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress } = useIOTA();
   const [acc, setAcc] = useState('');
   const [accFull, setAccFull] = useState('');
-  const [Balance, setBalance] = useState("");
   const [count, setCount] = useState(0);
   const [isSigned, setSigned] = useState(false);
 
   // dApp Kit hooks (safe: this component is client-only)
   const wallets = useWallets();
-  const currentAccount = useCurrentAccount();
-  const connect = useConnectWallet();
-  const disconnect = useDisconnectWallet();
-  const [currentWalletAddress, setCurrentWalletAddress] = useState<string | null>(null);
-  const { data, isPending, isError, error, refetch } = useIotaClientQuery(
-    'getAllBalances',
-    { owner: currentWalletAddress },
-    {
-      gcTime: 10000,
-              },
-            );
+
   async function fetchInfo() {
     if (!wallets || wallets.length === 0) {
       try { document.getElementById("withoutSign")!.style.display = "none"; } catch { }
@@ -45,13 +35,11 @@ export default function ClientNav() {
     if (window.localStorage.getItem("login-type") === "iota") {
       try {
         // If there's already a current account, use it
-        if (currentAccount) {
-          const acct: any = currentAccount as any;
-          const addr = acct?.address ?? acct?.bech32Address ?? acct?.bech32 ?? acct?.id ?? JSON.stringify(acct);
+        if (currentWalletAddress) {
+          const addr = currentWalletAddress;
           let subbing = window.innerWidth > 500 ? 20 : 10;
           setAcc(addr.toString().substring(0, subbing) + "...");
           setAccFull(addr);
-          setBalance((acct?.balance ?? "") + " IOTA");
           if (!isSigned) setSigned(true);
           try { document.getElementById("withoutSign")!.style.display = "none"; } catch { }
           try { document.getElementById("withSign")!.style.display = ""; } catch { }
@@ -59,32 +47,7 @@ export default function ClientNav() {
           return;
         }
 
-        // Otherwise attempt to connect using the first available wallet
-        const wallet = wallets[0];
-        if (wallet) {
-
-          const result = await connect.mutateAsync({
-            wallet,
-            silent: true,
-          });
-          const accounts = result?.accounts ?? [];
-          if (accounts && accounts.length > 0) {
-            const acct0: any = accounts[0];
-            const addr = acct0?.address ?? acct0?.bech32Address ?? JSON.stringify(acct0);
-        setCurrentWalletAddress(addr.toString());
-        refetch();
-            console.log(data);
-            let subbing = window.innerWidth > 500 ? 20 : 10;
-            setAcc(addr.toString().substring(0, subbing) + "...");
-            setAccFull(addr);
-            setBalance((acct0?.balance ?? "") + " IOTA");
-            if (!isSigned) setSigned(true);
-            try { document.getElementById("withoutSign")!.style.display = "none"; } catch { }
-            try { document.getElementById("withSign")!.style.display = ""; } catch { }
-            running = false;
-            return;
-          }
-        }
+     
       } catch (error) {
         console.error(error);
         running = false;
