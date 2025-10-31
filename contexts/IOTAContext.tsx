@@ -18,8 +18,10 @@ export function WrapBigNumber(value: string | number): number {
 const IOTAContext = createContext({
     ParseBigNumber,
     WrapBigNumber,
-    Balance:"",
-    currentWalletAddress:""
+    Balance: "",
+    currentWalletAddress: "",
+    PACKAGE_ID: "0xad6145388ba41f8c8ffa7327becb121c294ae84f78722d44e9e14de0e277e200",
+    MODULE: "dao"
 });
 
 export const useIOTA = () => useContext(IOTAContext);
@@ -80,7 +82,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
 
-    return <IOTAContext.Provider value={{ ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress }}>
+    return <IOTAContext.Provider value={{ ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, PACKAGE_ID: "0xad6145388ba41f8c8ffa7327becb121c294ae84f78722d44e9e14de0e277e200", MODULE: "dao" }}>
         {children}
     </IOTAContext.Provider>
 };

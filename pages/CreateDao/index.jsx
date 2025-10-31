@@ -13,12 +13,14 @@ import { GenericPicture, ControlsPlus } from "@heathmont/moon-icons-tw";
 import { Checkbox } from "@heathmont/moon-core-tw";
 
 import { useIPFSContext } from '../../contexts/IPFSContext';
+import { useIOTA } from '../../contexts/IOTAContext';
 
 export default function CreateDao() {
   const [DaoImage, setDaoImage] = useState([]);
-  const { contract, signerAddress, sendTransaction,formatTemplate } = useContract()
   const router = useRouter();
-  const {UploadBlob} = useIPFSContext(); 
+  const { UploadBlob } = useIPFSContext();
+  const { currentWalletAddress, PACKAGE_ID, MODULE } = useIOTA();
+  const FUNCTION = "create_dao";
 
   //Input fields
   const [DaoTitle, DaoTitleInput] = UseFormInput({
@@ -85,83 +87,56 @@ export default function CreateDao() {
     CreateDAOBTN.disabled = true;
     let allFiles = [];
     for (let index = 0; index < DaoImage.length; index++) {
-      //Gathering all files link
       const element = DaoImage[index];
       const url = element.type ? await UploadBlob(element) : '';
       const image = {
         url,
         type: element.type
       };
-      allFiles.push(image)
+      allFiles.push(image);
     }
 
-    //Creating an object of all information to store in EVM
-    const createdObject = {
-      title: 'Asset Metadata',
-      type: 'object',
-      properties: {
-        Title: {
-          type: 'string',
-          description: DaoTitle,
-        },
-        Description: {
-          type: 'string',
-          description: DaoDescription,
-        },
-        Start_Date: {
-          type: 'string',
-          description: StartDate,
-        },
-        logo: {
-          type: 'string',
-          description: allFiles[0]
-        },
-        wallet: {
-          type: 'string',
-          description: signerAddress
-        },
-        SubsPrice: {
-          type: 'number',
-          description: SubsPrice
-        },
-        typeimg: {
-          type: 'string',
-          description: "Dao"
-        },
-        allFiles
-      }
-    };
-    console.log("======================>Creating Dao");
+    // Prepare arguments for Move contract
+    // dao_wallet: address (as bytes)
+    // dao_uri: string (as bytes)
+    // template: string (as bytes)
+    const dao_wallet = new TextEncoder().encode(currentWalletAddress);
+    const dao_uri = new TextEncoder().encode(JSON.stringify({
+      title: DaoTitle,
+      description: DaoDescription,
+      start_date: StartDate,
+      logo: allFiles[0]?.url || "",
+      wallet: currentWalletAddress,
+      subs_price: SubsPrice,
+      typeimg: "Dao",
+      allFiles
+    }));
+    let template = "";
     try {
-      const valueAll = await contract.get_all_daos() //Getting dao URI from smart contract       
+      template = await (await fetch(`/template/template.html`)).text();
+    } catch {}
+    const formatted_template = template; // Optionally format as needed
+    const template_bytes = new TextEncoder().encode(formatted_template);
 
-      // //Getting the dao id of new one
-      let daoid = valueAll.length;
+    // Call IOTA Move contract using IOTAContext
+    try {
+      if (!window.IotaDappKit || !window.IotaDappKit.client) throw new Error("IOTA dapp-kit client not found");
+      const tx = await window.IotaDappKit.client.callMoveEntryFunction({
+        packageId: PACKAGE_ID,
+        module: MODULE,
+        function: FUNCTION,
+        arguments: [dao_wallet, dao_uri, template_bytes],
+        sender: currentWalletAddress
+      });
       if (document.getElementById("plugin").checked) {
         await CreatePlugin(
-          `http://${window.location.host}/daos/dao?[${daoid}]`
+          `http://${window.location.host}/daos/dao?[${tx?.objectId || "new"}]`
         );
       }
-      var template = await (await fetch(`/template/template.html`)).text();
-
-      let changings = [{
-        key: "dao-title",
-        value: DaoTitle
-      }, {
-        key: "dao-image",
-        value: allFiles[0].url
-      }]
-      let formatted_template = formatTemplate(template,changings)
-     
-      // Creating Dao in Smart contract from metamask chain
-      await sendTransaction(await window.contract.populateTransaction.create_dao(signerAddress, JSON.stringify(createdObject), formatted_template));
-
+      router.push("/daos");
     } catch (error) {
       console.error(error);
-      return;
-      // window.location.href = "/login?[/]"; //If found any error then it will let the user to login page
     }
-    router.push("/daos"); //After the success it will redirect the user to /dao page
   }
 
   function FilehandleChange(dao) {
