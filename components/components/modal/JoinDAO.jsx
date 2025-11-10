@@ -63,7 +63,7 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
         const { amount } = e.target;
         alertBox = e.target.querySelector("[name=alertbox]");
         setisLoading(true);
-        ShowAlert("pending", "Transferring " + amount.value + " HBAR .....");
+        ShowAlert("pending", "Transferring " + amount.value + " IOTA .....");
 
 
         const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
@@ -103,7 +103,7 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
          const Web3 = require("web3");
         const web3 = new Web3(window.ethereum);
         let _balance = await web3.eth.getBalance(window?.ethereum?.selectedAddress);
-        let token = "HBAR";
+        let token = "IOTA";
         setToken(token);
         setBalance(Number(_balance / 1000000000000000000));
 

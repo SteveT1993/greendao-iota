@@ -19,7 +19,7 @@ import useContract from "../../../services/useContract";
 export default function DonateCoin({ ideasid, show, onHide, address }) {
 
 	const [CurrentAddress, setCurrentAddress] = useState("");
-	const [Coin, setCoin] = useState("HBAR");
+	const [Coin, setCoin] = useState("IOTA");
 	const [isLoading, setisLoading] = useState(false);
 	const [isSent, setisSent] = useState(false);
 	const { sendTransaction } = useContract()
@@ -61,7 +61,7 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 		const { amount } = e.target;
 		alertBox = e.target.querySelector("[name=alertbox]");
 		setisLoading(true);
-		ShowAlert("pending","Transferring " + amount.value + " HBAR .....");
+		ShowAlert("pending","Transferring " + amount.value + " IOTA .....");
 
 		const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
 		//If it is sending from hedera then it will not use bridge

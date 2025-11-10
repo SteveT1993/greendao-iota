@@ -12,6 +12,7 @@ import { ControlsPlus, ControlsChevronRight, ControlsChevronLeft } from "@heathm
 import { Button } from "@heathmont/moon-core-tw"
 import Skeleton from "@mui/material/Skeleton"
 import JoinDAO from "../../../components/components/modal/JoinDAO";
+import { useIOTA } from "../../../contexts/IOTAContext";
 let running = true
 export default function DAO() {
 	//Variables
@@ -19,6 +20,7 @@ export default function DAO() {
 	const [DaoURI, setDaoURI] = useState({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Date: "", logo: "", wallet: "", typeimg: "", allFiles: [], isOwner: false })
 	const [daoId, setDaoID] = useState(-1)
 	const { contract, signerAddress } = useContract()
+	const { daos } = useIOTA()
 	const [JoinmodalShow, setJoinmodalShow] = useState(false);
 	const [isJoined, setIsJoined] = useState(true)
 
@@ -31,7 +33,7 @@ export default function DAO() {
 
 	useEffect(() => {
 		fetchContractData();
-	}, [contract])
+	}, [daos])
 
 	setInterval(function () {
 		calculateTimeLeft()
@@ -80,7 +82,7 @@ export default function DAO() {
 					</div>
 
 					<a href={`/daos/dao/goal?[${listItem.goalId}]`}>
-						<Button iconleft={true}>
+						<Button iconLeft>
 							<ControlsChevronRight />
 							Go to Goal
 						</Button>
@@ -95,88 +97,64 @@ export default function DAO() {
 		running = true;
 		//Fetching data from Smart contract
 		try {
-			if (contract && id) {
+			if (daos && daos.length > 0 && id) {
 				setDaoID(Number(id))
 
-				//Load everything-----------
-				const daoURI = JSON.parse(await contract.dao_uri(Number(id))) //Getting dao URI
+				const dao = daos.find(d => d.tableId === id.toString());
+				if (dao) {
+					const daoURI = JSON.parse(dao.dao_uri);
 
-				const totalGoals = await contract.get_all_goals_by_dao_id(Number(id)) //Getting all goals by dao id
-				const arr = []
-				for (let i = 0; i < Object.keys(totalGoals).length; i++) {
-					//total dao number Iteration
-					const goalid = await contract.get_goal_id_by_goal_uri(totalGoals[i])
-					let goal = totalGoals[i];
-					if (goal == "") continue;
-					const object = JSON.parse(goal)
+					// For now, no goals, so empty list
+					setList([]);
 
-					if (object) {
-						arr.push({
-							//Pushing all data into array
-							goalId: goalid,
-							Title: object.properties.Title.description,
-							Description: object.properties.Description.description,
-							Budget: object.properties.Budget.description,
-							End_Date: object.properties.End_Date.description,
-							logo: object.properties.logo.description.url,
-						})
+					let daoURIShort = {
+						Title: daoURI.title,
+						Description: daoURI.description,
+						Start_Date: daoURI.start_date,
+						logo: daoURI.logo,
+						wallet: dao.dao_wallet,
+						typeimg: daoURI.typeimg,
+						allFiles: daoURI.allFiles,
+						SubsPrice: daoURI.subs_price,
+						isOwner: dao.dao_wallet === signerAddress ? true : false
+					};
+					setDaoURI(daoURIShort);
+					// For now, assume not joined
+					setIsJoined(false);
+
+					document.querySelector("#dao-container").innerHTML = dao.template;
+					if (document.querySelector(".btn-back") != null) {
+						document.querySelector(".btn-back").addEventListener('click', () => {
+							window.history.back();
+						});
 					}
-				}
-				setList(arr)
-				let daoURIShort = {
-					Title: daoURI.properties.Title.description,
-					Description: daoURI.properties.Description.description,
-					Start_Date: daoURI.properties.Start_Date.description,
-					logo: daoURI.properties.logo.description,
-					wallet: daoURI.properties.wallet.description, // Now IOTA address
-					typeimg: daoURI.properties.typeimg.description,
-					allFiles: daoURI.properties.allFiles.description,
-					SubsPrice: daoURI.properties?.SubsPrice?.description,
-					isOwner: daoURI.properties.wallet.description === signerAddress ? true : false
-				};
-				setDaoURI(daoURIShort);
-				let isJoined = await contract.is_person_joined(signerAddress);
-				setIsJoined(isJoined)
-
-				const template_html = await contract._template_uris(Number(id));
-				document.querySelector("#dao-container").innerHTML = template_html;
-				if (document.querySelector(".btn-back") != null) {
-					document.querySelector(".btn-back").addEventListener('click', () => {
-						window.history.back();
-					});
-
-				}
-				let join_community_block = document.querySelector(".join-community-block");
-				let create_goal_block = document.querySelector(".create-goal-block");
-				if (create_goal_block != null) {
-					document.querySelector(".create-goal-block").addEventListener('click', () => {
-						window.location.href = `/CreateGoal?[${id}]`;
-					});
-				}
-
-				if (join_community_block != null) {
-					join_community_block.addEventListener('click', JoinCommunity);
-				};
-
-				if (daoURIShort.isOwner || isJoined) {
-					if (join_community_block != null) {
-
-						join_community_block.style.display = "none";
-					}
-				}
-				if ( !isJoined) {
+					let join_community_block = document.querySelector(".join-community-block");
+					let create_goal_block = document.querySelector(".create-goal-block");
 					if (create_goal_block != null) {
-						create_goal_block.style.display = "none";
+						document.querySelector(".create-goal-block").addEventListener('click', () => {
+							window.location.href = `/CreateGoal?[${id}]`;
+						});
 					}
+
+					if (join_community_block != null) {
+						join_community_block.addEventListener('click', JoinCommunity);
+					};
+
+					if (daoURIShort.isOwner || isJoined) {
+						if (join_community_block != null) {
+							join_community_block.style.display = "none";
+						}
+					}
+					if (!isJoined) {
+						if (create_goal_block != null) {
+							create_goal_block.style.display = "none";
+						}
+					}
+					const root = createRoot(document.getElementById("goal-container"));
+					root.render(goal([]));
+
+					if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 				}
-				const root = createRoot(document.getElementById("goal-container"));
-
-
-				root.render(goal(arr))
-
-
-				/** TODO: Fix fetch to get completed ones as well */
-				if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 			}
 		} catch (error) {
 			console.error(error);

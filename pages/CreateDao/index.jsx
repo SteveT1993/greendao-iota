@@ -5,7 +5,7 @@ import UseFormTextArea from "../../components/components/UseFormTextArea";
 import { Header } from "../../components/layout/Header";
 import NavLink from "next/link";
 import { useRouter } from "next/router";
-import useContract from '../../services/useContract'
+import { Transaction, } from "@iota/iota-sdk/transactions";
 import isServer from "../../components/isServer";
 import styles from "./CreateDao.module.css";
 import { Button } from "@heathmont/moon-core-tw";
@@ -19,7 +19,7 @@ export default function CreateDao() {
   const [DaoImage, setDaoImage] = useState([]);
   const router = useRouter();
   const { UploadBlob } = useIPFSContext();
-  const { currentWalletAddress, PACKAGE_ID, MODULE } = useIOTA();
+  const { sendTransaction, currentWalletAddress } = useIOTA();
   const FUNCTION = "create_dao";
 
   //Input fields
@@ -47,11 +47,12 @@ export default function CreateDao() {
   const [SubsPrice, SubsPriceInput] = UseFormInput({
     defaultValue: "",
     type: "text",
-    placeholder: "Price(HBAR) Per Month",
+    placeholder: "Price(IOTA) Per Month",
     id: "subs_price",
   });
 
   if (isServer()) return null;
+  // Wallet connection is handled by IOTAContext
 
   //Downloading plugin function
   function downloadURI(uri, name) {
@@ -100,8 +101,8 @@ export default function CreateDao() {
     // dao_wallet: address (as bytes)
     // dao_uri: string (as bytes)
     // template: string (as bytes)
-    const dao_wallet = new TextEncoder().encode(currentWalletAddress);
-    const dao_uri = new TextEncoder().encode(JSON.stringify({
+    const dao_wallet = (currentWalletAddress);
+    const dao_uri = (JSON.stringify({
       title: DaoTitle,
       description: DaoDescription,
       start_date: StartDate,
@@ -114,23 +115,16 @@ export default function CreateDao() {
     let template = "";
     try {
       template = await (await fetch(`/template/template.html`)).text();
-    } catch {}
+    } catch { }
     const formatted_template = template; // Optionally format as needed
-    const template_bytes = new TextEncoder().encode(formatted_template);
 
+    const tx = new Transaction();
     // Call IOTA Move contract using IOTAContext
     try {
-      if (!window.IotaDappKit || !window.IotaDappKit.client) throw new Error("IOTA dapp-kit client not found");
-      const tx = await window.IotaDappKit.client.callMoveEntryFunction({
-        packageId: PACKAGE_ID,
-        module: MODULE,
-        function: FUNCTION,
-        arguments: [dao_wallet, dao_uri, template_bytes],
-        sender: currentWalletAddress
-      });
+      const txOutput = await sendTransaction(tx,FUNCTION, [tx.pure.string(dao_wallet), tx.pure.string(dao_uri), tx.pure.string(formatted_template)]);
       if (document.getElementById("plugin").checked) {
         await CreatePlugin(
-          `http://${window.location.host}/daos/dao?[${tx?.objectId || "new"}]`
+          `http://${window.location.host}/daos/dao?[${txOutput?.objectId || "new"}]`
         );
       }
       router.push("/daos");

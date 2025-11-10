@@ -10,16 +10,18 @@ import Card from "../../components/components/Card/Card"
 import { ControlsChevronRight,GenericEdit } from "@heathmont/moon-icons-tw"
 import { Button } from "@heathmont/moon-core-tw"
 import Skeleton from "@mui/material/Skeleton"
+import { useIOTA } from "../../contexts/IOTAContext";
 
 let running = true
 export default function DAOs() {
 	//Variables
 	const [list, setList] = useState([])
 	const { contract } = useContract()
+	const { daos } = useIOTA()
 
 	useEffect(() => {
 		fetchContractData()
-	}, [contract])
+	}, [daos])
 
 	setInterval(function () {
 		calculateTimeLeft()
@@ -41,28 +43,22 @@ export default function DAOs() {
 
 	async function fetchContractData() {
 		running = true
+		
 		//Fetching data from Smart contract
 		try {
-			if (contract) {
-				const totalDao = await contract.get_all_daos() //Getting total dao (Number)
-				const arr = []
-				for (let i = 0; i < Object.keys(totalDao).length; i++) {
-					//total dao number Iteration
-					const object = JSON.parse(totalDao[i])
-					if (object) {
-						arr.push({
-							//Pushing all data into array
-							daoId: i,
-							Title: object.properties.Title.description,
-							Start_Date: object.properties.Start_Date.description,
-							logo: object.properties.logo.description.url,
-							wallet: object.properties.wallet.description,
-							SubsPrice: object.properties?.SubsPrice?.description,
-						})
-					}
-				}
-				setList(arr)
-				/** TODO: Fix fetch to get completed ones as well */
+			if (daos && daos.length > 0) {
+				const arr = daos.map(d => {
+					const daoURI = JSON.parse(d.dao_uri);
+					return {
+						daoId: d.id.id,
+						Title: daoURI.title,
+						Start_Date: daoURI.start_date,
+						logo: daoURI.logo,
+						wallet: d.dao_wallet,
+						SubsPrice: daoURI.subs_price,
+					};
+				});
+				setList(arr);
 				if (document.getElementById("Loading"))  document.getElementById("Loading").style = "display:none";
 			}
 		} catch (error) {
@@ -88,7 +84,7 @@ export default function DAOs() {
 		if (running) {
       let allElements = [];
       for (let i=0; i < many; i++){
-        allElements.push( <Skeleton variant={type} width={width} height={height} />)
+        allElements.push( <Skeleton key={i} variant={type} width={width} height={height} />)
       }		
       return allElements;	
 		} else {
@@ -139,19 +135,19 @@ export default function DAOs() {
 												</div>
 												<div className="whitespace-nowrap truncate">
 													Subscription :
-													HBAR {listItem.SubsPrice }/mo
+													IOTA {listItem.SubsPrice }/mo
 												</div>
 											</div>
 										</div>
 										<div className="flex align-center flex justify-end align-center gap-2">
-										<a href={`/DesignDao?[${listItem.daoId}]`}>
-												<Button iconleft>
+											<a href={`/DesignDao?[${listItem.daoId}]`}>
+												<Button iconLeft>
 													<GenericEdit />
 													Customize
 												</Button>
 											</a>
 											<a href={`/daos/dao?[${listItem.daoId}]`}>
-												<Button iconleft>
+												<Button iconLeft>
 													<ControlsChevronRight />
 													Go to Dao
 												</Button>

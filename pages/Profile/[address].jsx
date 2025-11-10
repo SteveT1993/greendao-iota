@@ -334,7 +334,7 @@ export default function Profile() {
 											>
 												<div id="ember1270" className="user-stat ember-view">
 													<span className="value">
-														<span className="number">{Donated} HBAR</span>
+														<span className="number">{Donated} IOTA</span>
 													</span>
 													<span className="label">
 														donated
@@ -452,7 +452,7 @@ export default function Profile() {
 										element={DontatedIdeas.map((item, idx) => {
 											return <li id="ember154" key={idx} className="ember-view">
 												<span className="topic-info">
-													<span className="like-count"><span className="number">{item.donation} HBAR</span></span>
+													<span className="like-count"><span className="number">{item.donation} IOTA</span></span>
 												</span>
 												<br></br>
 												<a href={"/daos/dao/goal/ideas?[" + item.id + "]"}>

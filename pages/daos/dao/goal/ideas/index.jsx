@@ -390,7 +390,7 @@ export default function GrantIdeas() {
 					/>
 
 					<Loader element={<div className="flex">Voted: {IdeasURI.voted} </div>} width={"100%"} />
-					<Loader element={<div className="flex">Donated: {IdeasURI.donation} HBAR </div>} width={"100%"} />
+					<Loader element={<div className="flex">Donated: {IdeasURI.donation} IOTA </div>} width={"100%"} />
 				
 					<Loader element={<p>{IdeasURI.Description} </p>} width={"100%"} />
 				</div>
