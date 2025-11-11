@@ -425,6 +425,26 @@ module 0x0::dao {
 		});
 	}
 
+	/// Update template for a DAO
+	public entry fun update_template(
+		state: &mut State,
+		id: u64,
+		template: vector<u8>,
+		ctx: &mut tx_context::TxContext
+	) {
+		let template_str = string::utf8(template);
+		let dao = table::borrow_mut(&mut state.daos, id);
+		dao.template = template_str;
+		// Emit the DaoRetrieved event with updated template
+		event::emit(DaoRetrieved {
+			id,
+			dao_wallet: dao.dao_wallet,
+			dao_uri: dao.dao_uri,
+			finished: dao.finished,
+			template: dao.template
+		});
+	}
+
 	/// Get UserBadge by wallet string
 	public entry fun get_user_badge(state: &State, wallet: vector<u8>, ctx: &mut tx_context::TxContext) {
 		let wallet_str = string::utf8(wallet);

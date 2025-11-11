@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Head from "next/head"
 import NavLink from "next/link"
 import useContract from "../../../../services/useContract"
+import { useIOTA } from '../../../../contexts/IOTAContext'
 
 import { Header } from "../../../../components/layout/Header"
 import isServer from "../../../../components/isServer"
@@ -30,14 +31,13 @@ export default function Goal() {
 	})
 	const [goalId, setGoalID] = useState(-1)
 	const { contract, signerAddress } = useContract()
+	const { sleep } = useIOTA()
 
 	const regex = /\[(.*)\]/g
 	let m
 	let id = "" //id from url
 
-	const sleep = milliseconds => {
-		return new Promise(resolve => setTimeout(resolve, milliseconds))
-	}
+	// use shared sleep helper from IOTA context
 
 	useEffect(() => {
 		fetchContractData()

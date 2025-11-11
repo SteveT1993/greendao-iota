@@ -6,7 +6,6 @@ import Card from "../../components/components/Card/Card"
 import isServer from "../../components/isServer"
 import { gjsPlugin } from '../../components/plugin/gjsPlugin';
 
-import useContract from '../../services/useContract'
 import { useIOTA } from '../../contexts/IOTAContext'
 import { Transaction } from '@iota/iota-sdk/transactions'
 
@@ -16,11 +15,8 @@ let DaoURI = ({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Da
 let loadedEditor= false;
 export default function DesignDao() {
 
-	const sleep = milliseconds => {
-		return new Promise(resolve => setTimeout(resolve, milliseconds))
-	}
-  // Use IOTA context for on-chain reads/writes
-  const { daos, sendTransaction, currentWalletAddress } = useIOTA();
+  // Use IOTA context for on-chain reads/writes (includes shared sleep helper)
+  const { daos, sendTransaction, currentWalletAddress, sleep } = useIOTA();
 
   const [list, setList] = useState([]);
 
@@ -371,7 +367,7 @@ export default function DesignDao() {
     _tui,
     _typed,
     _stylebg,
-    
+
 
        
 
@@ -488,7 +484,8 @@ export default function DesignDao() {
 
     // Build and send an IOTA Move transaction to update the template
     const tx = new Transaction();
-    await sendTransaction(tx, 'update_template', [Number(id), output]);
+    // Use tx.pure helpers so arguments are serialized for Move: u64 id and string template
+    await sendTransaction(tx, 'update_template', [tx.pure.u64(Number(id)), tx.pure.string(output)]);
   }
 
   async function fetchContractData() {

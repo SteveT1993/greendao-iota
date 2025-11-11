@@ -19,7 +19,7 @@ export default function CreateDao() {
   const [DaoImage, setDaoImage] = useState([]);
   const router = useRouter();
   const { UploadBlob } = useIPFSContext();
-  const { sendTransaction, currentWalletAddress } = useIOTA();
+  const { sendTransaction, currentWalletAddress, sleep } = useIOTA();
   const FUNCTION = "create_dao";
 
   //Input fields
@@ -135,6 +135,7 @@ export default function CreateDao() {
           `http://${window.location.host}/daos/dao?[${txOutput?.objectId || "new"}]`
         );
       }
+  await sleep(2000);
       router.push("/daos");
     } catch (error) {
       console.error(error);
@@ -300,4 +301,15 @@ export default function CreateDao() {
       </div>
     </>
   );
+}
+export function formatTemplate(template,changings){
+	
+
+
+	for (let i = 0; i < changings.length; i++) {
+		const element = changings[i];
+		template =template.replaceAll("{{"+element.key+"}}",element.value);		
+	}
+	return template;
+
 }

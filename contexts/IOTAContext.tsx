@@ -27,10 +27,16 @@ const IOTAContext = createContext({
     sendTransaction: async (tx: Transaction, functionName: string, args: any[]) => null,
     daos: [],
     getAllDaos: async () => [],
-    queryEvent: async (digest: string, eventType: string) => null
+    queryEvent: async (digest: string, eventType: string) => null,
+    sleep: async (ms: number) => { return new Promise((resolve) => setTimeout(resolve, ms)); }
 });
 
 export const useIOTA = () => useContext(IOTAContext);
+
+// standalone helper export
+export function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 let running = false;
 
@@ -179,7 +185,8 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
 
-    return <IOTAContext.Provider value={{ getAllDaos, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos, queryEvent }}>
+    return <IOTAContext.Provider value={{ getAllDaos, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos, queryEvent, sleep }}>
         {children}
     </IOTAContext.Provider>
 };
+

@@ -20,13 +20,11 @@ export default function DAO() {
 	const [DaoURI, setDaoURI] = useState({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Date: "", logo: "", wallet: "", typeimg: "", allFiles: [], isOwner: false })
 	const [daoId, setDaoID] = useState(-1)
 	const { contract, signerAddress } = useContract()
-	const { daos } = useIOTA()
+	const { daos, sleep } = useIOTA()
 	const [JoinmodalShow, setJoinmodalShow] = useState(false);
 	const [isJoined, setIsJoined] = useState(true)
 
-	const sleep = milliseconds => {
-		return new Promise(resolve => setTimeout(resolve, milliseconds))
-	}
+	// use shared sleep from IOTA context
 	const regex = /\[(.*)\]/g
 	let m
 	let id = "" //id from url
