@@ -26,7 +26,8 @@ const IOTAContext = createContext({
     currentWalletAddress: "",
     sendTransaction: async (tx: Transaction, functionName: string, args: any[]) => null,
     daos: [],
-    getAllDaos: async () => []
+    getAllDaos: async () => [],
+    queryEvent: async (digest: string, eventType: string) => null
 });
 
 export const useIOTA = () => useContext(IOTAContext);
@@ -94,6 +95,10 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             fetchInfo();
         }
     }, [wallets, currentAccount]);
+    async function queryEvent(digest: string, eventType: string) {
+        const tx = await client.getTransactionBlock({ digest, options: { showEvents: true } });
+        return tx.events?.find(e => e.type === eventType);
+    }
     async function fetchStateData(){
         if (!client) throw new Error("IOTA dapp-kit client not found");
 
@@ -105,7 +110,6 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     async function getAllDaos(){
         const stateData = await fetchStateData();
-        console.log("stateData:", stateData);
         let loadedDaos: any[] = [];
         try {
             if (
@@ -175,7 +179,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
 
-    return <IOTAContext.Provider value={{ getAllDaos, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos }}>
+    return <IOTAContext.Provider value={{ getAllDaos, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos, queryEvent }}>
         {children}
     </IOTAContext.Provider>
 };

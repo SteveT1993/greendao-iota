@@ -2,33 +2,25 @@ import React, { useState, useEffect } from "react";
 import Head from "next/head"
 import Image from "next/image"
 import NavLink from "next/link"
-import grapesjs from 'grapesjs';
 import Card from "../../components/components/Card/Card"
 import isServer from "../../components/isServer"
 import { gjsPlugin } from '../../components/plugin/gjsPlugin';
 
 import useContract from '../../services/useContract'
+import { useIOTA } from '../../contexts/IOTAContext'
+import { Transaction } from '@iota/iota-sdk/transactions'
 
 import 'grapesjs/dist/css/grapes.min.css';
-import grapesjs_preset_webpage from 'grapesjs-preset-webpage';
-import grapesjs_plugin_forms from 'grapesjs-plugin-forms';
-import grapesjs_plugin_export from 'grapesjs-plugin-export';
-import grapesjs_custom_code from 'grapesjs-custom-code';
-import grapesjs_parser_postcss from 'grapesjs-parser-postcss';
-import grapesjs_tooltip from 'grapesjs-tooltip';
-import grapesjs_tui_image_editor from 'grapesjs-tui-image-editor';
-import grapesjs_typed from 'grapesjs-typed';
-import grapesjs_style_bg from 'grapesjs-style-bg';
-import gjs_blocks_basic from 'grapesjs-blocks-basic';
 
 let DaoURI = ({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Date: "", logo: "", wallet: "", typeimg: "", allFiles: [], isOwner: false });
-
+let loadedEditor= false;
 export default function DesignDao() {
 
 	const sleep = milliseconds => {
 		return new Promise(resolve => setTimeout(resolve, milliseconds))
 	}
-  const { contract, signerAddress, sendTransaction } = useContract();
+  // Use IOTA context for on-chain reads/writes
+  const { daos, sendTransaction, currentWalletAddress } = useIOTA();
 
   const [list, setList] = useState([]);
 
@@ -39,7 +31,7 @@ export default function DesignDao() {
 
   useEffect(() => {
     LoadEditor();
-  }, [contract])
+  }, [daos])
   if (isServer()) return null
   const str = decodeURIComponent(window.location.search)
 
@@ -51,12 +43,69 @@ export default function DesignDao() {
   }
 
   async function LoadEditor() {
-    if (typeof window == 'undefined'  || contract === null|| id === null) {
+    if (typeof window == 'undefined' || id === null) {
       return null;
     }
     await fetchContractData();
-    if (editor != null) return;
+    if (editor  != null || loadedEditor) return;
+    loadedEditor=true;
+    await sleep(1500);
+    // Load grapesjs via a CDN script to avoid webpack/SSR import issues.
+    if (!window.grapesjs) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/grapesjs/dist/grapes.min.js';
+        s.async = true;
+        s.onload = () => resolve(true);
+        s.onerror = (e) => reject(e);
+        document.head.appendChild(s);
+      });
+    }
+    const grapesjs = window.grapesjs;
+        if (editor != null) return;
     await sleep(500);
+    // Dynamically import grapesjs and plugins on the client to avoid SSR/module issues
+    const [
+      grapesjs_preset_webpage,
+      grapesjs_plugin_forms,
+      grapesjs_plugin_export,
+      grapesjs_custom_code,
+      grapesjs_parser_postcss,
+      grapesjs_tooltip,
+      grapesjs_tui_image_editor,
+      grapesjs_typed,
+      grapesjs_style_bg,
+      gjs_blocks_basic
+    ] = await Promise.all([
+      import('grapesjs-preset-webpage'),
+      import('grapesjs-plugin-forms'),
+      import('grapesjs-plugin-export'),
+      import('grapesjs-custom-code'),
+      import('grapesjs-parser-postcss'),
+      import('grapesjs-tooltip'),
+      import('grapesjs-tui-image-editor'),
+      import('grapesjs-typed'),
+      import('grapesjs-style-bg'),
+      import('grapesjs-blocks-basic')
+    ]);
+
+    // unwrap default exports for plugins
+    const _preset = grapesjs_preset_webpage.default || grapesjs_preset_webpage;
+    const _forms = grapesjs_plugin_forms.default || grapesjs_plugin_forms;
+    const _export = grapesjs_plugin_export.default || grapesjs_plugin_export;
+    const _custom = grapesjs_custom_code.default || grapesjs_custom_code;
+    const _parser = grapesjs_parser_postcss.default || grapesjs_parser_postcss;
+    const _tooltip = grapesjs_tooltip.default || grapesjs_tooltip;
+    const _tui = grapesjs_tui_image_editor.default || grapesjs_tui_image_editor;
+    const _typed = grapesjs_typed.default || grapesjs_typed;
+    const _stylebg = grapesjs_style_bg.default || grapesjs_style_bg;
+
+
+    
+
+    // Initialize with just the local gjsPlugin to avoid loading many plugins that may
+    // introduce additional globals or require extra assets. We can add plugins later
+    // by loading their UMD bundles if needed.
     var editor = grapesjs.init({
       container: '#editor',
       fromElement: true,
@@ -312,17 +361,20 @@ export default function DesignDao() {
         ],
       },
       plugins: [
-        gjsPlugin,
-        gjs_blocks_basic,
-        grapesjs_plugin_forms,
-        grapesjs_plugin_export,
-        grapesjs_custom_code,
-        grapesjs_parser_postcss,
-        grapesjs_tooltip,
-        grapesjs_tui_image_editor,
-        grapesjs_typed,
-        grapesjs_style_bg,
-        grapesjs_preset_webpage
+  gjsPlugin,
+    _preset,
+    _forms,
+    _export,
+    _custom,
+    _parser,
+    _tooltip,
+    _tui,
+    _typed,
+    _stylebg,
+    
+
+       
+
       ],
       pluginsOpts: {
         gjs_blocks_basic: { flexGrid: true },
@@ -380,64 +432,102 @@ export default function DesignDao() {
       }
     });
     setEditor(editor);
-    window.editorGJ = editor;
+
+    // If the standard basic blocks plugin didn't register (due to CDN block or timing),
+    // add a small fallback set of useful blocks so the editor isn't empty.
+    function addFallbackBlocks(ed) {
+      try {
+        const blocks = ed.Blocks;
+        // Text block
+        if (!blocks.get('text')) {
+          blocks.add('text', {
+            label: 'Text',
+            category: 'Basic',
+            content: '<p>Insert your text here</p>',
+            attributes: { class: 'gjs-fonts' }
+          });
+        }
+        // Image block
+        if (!blocks.get('image')) {
+          blocks.add('image', {
+            label: 'Image',
+            category: 'Basic',
+            content: { type: 'image' },
+            attributes: { class: 'fa fa-image' }
+          });
+        }
+        // Link block
+        if (!blocks.get('link')) {
+          blocks.add('link', {
+            label: 'Link',
+            category: 'Basic',
+            content: '<a href="#">Link</a>',
+            attributes: { class: 'fa fa-link' }
+          });
+        }
+        // Section / Container
+        if (!blocks.get('section')) {
+          blocks.add('section', {
+            label: 'Section',
+            category: 'Layout',
+            content: '<section><h2>Section</h2><p>Section content</p></section>',
+            attributes: { class: 'fa fa-square' }
+          });
+        }
+      } catch (e) {
+        console.warn('addFallbackBlocks error', e);
+      }
+    }
+
+    // Give a slight delay to allow plugin UMDs to register; then add fallback blocks if needed.
+    setTimeout(() => addFallbackBlocks(editor), 700);
   }
 
   async function SaveHTML() {
     let output = editor.getHtml() + "<style>" + editor.getCss() + "</style>";
 
-    // Saving HTML in Smart contract from metamask chain
-    await sendTransaction(await window.contract.populateTransaction.update_template(id, output));
-
+    // Build and send an IOTA Move transaction to update the template
+    const tx = new Transaction();
+    await sendTransaction(tx, 'update_template', [Number(id), output]);
   }
 
   async function fetchContractData() {
 
     //Fetching data from Smart contract
     try {
-      if (contract && id != null) {
-
-
-        const daoURI = JSON.parse(await contract.dao_uri(Number(id))) //Getting dao URI
-				const template_html = await contract._template_uris(Number(id));
-				document.querySelector("#dao-container").innerHTML = template_html;
-
-        const totalGoals = await contract.get_all_goals_by_dao_id(Number(id)) //Getting all goals by dao id
-        const arr = []
-        for (let i = 0; i < Object.keys(totalGoals).length; i++) {
-          //total dao number Iteration
-          const goalid = await contract.get_goal_id_by_goal_uri(totalGoals[i])
-          let goal = totalGoals[i];
-          if (goal == "") continue;
-          const object = JSON.parse(goal)
-
-          if (object) {
-            arr.push({
-              //Pushing all data into array
-              goalId: goalid,
-              Title: object.properties.Title.description,
-              Description: object.properties.Description.description,
-              Budget: object.properties.Budget.description,
-              End_Date: object.properties.End_Date.description,
-              logo: object.properties.logo.description.url,
-            })
+      if (daos && id != null) {
+        // find the dao object provided by IOTA context
+        const dao = daos.find(d => String(d?.id?.id) === String(id) || String(d?.id) === String(id));
+        if (dao) {
+          // dao.dao_uri may be stored as a move value object or raw string; handle both
+          const daoUriRaw = dao.dao_uri?.value || dao.dao_uri;
+          let daoURI = {};
+          try {
+            daoURI = JSON.parse(daoUriRaw);
+          } catch (e) {
+            console.warn('Failed to parse dao_uri for dao', id, e);
+            daoURI = {};
           }
-        }
-        setList(arr)
-        DaoURI = ({
-          Title: daoURI.properties.Title.description,
-          Description: daoURI.properties.Description.description,
-          Start_Date: daoURI.properties.Start_Date.description,
-          logo: daoURI.properties.logo.description,
-          wallet: daoURI.properties.wallet.description,
-          typeimg: daoURI.properties.typeimg.description,
-          allFiles: daoURI.properties.allFiles.description,
-          SubsPrice: daoURI.properties?.SubsPrice?.description,
-          isOwner: daoURI.properties.wallet.description.toString().toLocaleLowerCase() === signerAddress.toString().toLocaleLowerCase() ? true : false
-        })
 
-        // window.querySelector('#dao-title').innerHTML = DaoURI.Title;
-        // window.querySelector('#dao-image').setAttribute("src", DaoURI.logo);
+          // template may be a string or wrapped value in different shapes coming from the client API
+          const template_html = (dao.template) || '';
+          if (document.querySelector("#dao-container")) document.querySelector("#dao-container").innerHTML = template_html;
+
+          // goals: not yet indexed via IOTA context getters here, leave empty for now
+          setList([])
+
+          DaoURI = ({
+            Title: (daoURI.title)  || '',
+            Description: (daoURI.description)  || '',
+            Start_Date: (daoURI.start_date)  || '',
+            logo: (daoURI.logo)  || '',
+            wallet: (dao.dao_wallet)  || '',
+            typeimg: (daoURI.typeimg)  || '',
+            allFiles: (daoURI.allFiles)  || '',
+            SubsPrice: (daoURI.subs_price) ,
+            isOwner: ((dao.dao_wallet)  || '').toString().toLocaleLowerCase() === (currentWalletAddress || '').toString().toLocaleLowerCase() ? true : false
+          })
+        }
       }
     } catch (error) {
       console.error(error);

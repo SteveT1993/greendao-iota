@@ -6,8 +6,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
-import { ethers } from "ethers";
+import { Transaction } from "@iota/iota-sdk/transactions";
 import FormControl, { useFormControl } from "@mui/material/FormControl";
+import { useIOTA } from "../../../contexts/IOTAContext";
 import InputLabel from "@mui/material/InputLabel";
 import Input from "@mui/material/Input";
 
@@ -23,7 +24,8 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
     const [Token, setToken] = useState("");
     const [isLoading, setisLoading] = useState(false);
     const [isSent, setisSent] = useState(false);
-    const { contract, signerAddress, sendTransaction } = useContract()
+    const { contract, signerAddress } = useContract()
+    const { Balance: IotaBalance, getAllDaos, currentWalletAddress, sendTransaction } = useIOTA();
 
     let alertBox = null;
     const [transaction, setTransaction] = useState({
@@ -66,31 +68,24 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
         ShowAlert("pending", "Transferring " + amount.value + " IOTA .....");
 
 
-        const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
-        //If it is sending from hedera then it will not use bridge
-        const tx = {
-            from: window?.ethereum?.selectedAddress?.toLocaleLowerCase(),
-            to: address,
-            value: ethers.utils.parseEther(amount.value)
-        };
-        const reciept = await (await signer.sendTransaction(tx)).wait();
+        // Build and send an IOTA Move transaction calling join_community
+        try {
+            const tx = new Transaction();
+            const joinAddress = (currentWalletAddress || window?.ethereum?.selectedAddress)?.toString().toLocaleLowerCase();
+            await sendTransaction(tx, "join_community", [Number(dao_id), joinAddress]);
 
+            ShowAlert("success", "Purchased Subscription successfully!");
+            // best-effort refresh of on-chain data
+            try { await getAllDaos(); } catch (e) { /* ignore */ }
 
-
-
-        setTransaction({
-            link: reciept.transaction
-        });
-        // Saving Joined Person on smart contract
-        await sendTransaction(await window.contract.populateTransaction.join_community(dao_id, window?.ethereum?.selectedAddress?.toLocaleLowerCase()));
-
-        ShowAlert("success", "Purchased Subscription successfully!");
-
-
-
-        LoadData();
-        setisLoading(false);
-        setisSent(true);
+            LoadData();
+            setisLoading(false);
+            setisSent(true);
+        } catch (err) {
+            console.error(err);
+            ShowAlert("error", "Transaction failed: " + (err?.message || err));
+            setisLoading(false);
+        }
     }
     const StyledPaper = styled(Paper)(({ theme }) => ({
         backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
@@ -99,14 +94,16 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
         color: theme.palette.text.primary
     }));
     async function LoadData() {
-       
-         const Web3 = require("web3");
-        const web3 = new Web3(window.ethereum);
-        let _balance = await web3.eth.getBalance(window?.ethereum?.selectedAddress);
-        let token = "IOTA";
+        // Use IOTA context balance string when available
+        const token = "IOTA";
         setToken(token);
-        setBalance(Number(_balance / 1000000000000000000));
-
+        if (IotaBalance) {
+            const parts = IotaBalance.split(" ");
+            const numeric = Number(parts[0]) || 0;
+            setBalance(numeric);
+        } else {
+            setBalance(0);
+        }
     }
 
     useEffect(() => {

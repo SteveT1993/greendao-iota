@@ -100,7 +100,7 @@ export default function DAO() {
 			if (daos && daos.length > 0 && id) {
 				setDaoID(Number(id))
 
-				const dao = daos.find(d => d.tableId === id.toString());
+				const dao = daos.find(d => d.id.id === id);
 				if (dao) {
 					const daoURI = JSON.parse(dao.dao_uri);
 

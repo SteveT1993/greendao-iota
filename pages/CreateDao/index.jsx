@@ -116,8 +116,16 @@ export default function CreateDao() {
     try {
       template = await (await fetch(`/template/template.html`)).text();
     } catch { }
-    const formatted_template = template; // Optionally format as needed
-
+    
+      let changings = [{
+        key: "dao-title",
+        value: DaoTitle
+      }, {
+        key: "dao-image",
+        value: allFiles[0].url
+      }]
+      let formatted_template = formatTemplate(template,changings)
+     
     const tx = new Transaction();
     // Call IOTA Move contract using IOTAContext
     try {
