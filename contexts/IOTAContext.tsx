@@ -27,6 +27,7 @@ const IOTAContext = createContext({
     sendTransaction: async (tx: Transaction, functionName: string, args: any[]) => null,
     daos: [],
     getAllDaos: async () => [],
+    getGoalsForDao: async (daoId: number) => [],
     queryEvent: async (digest: string, eventType: string) => null,
     sleep: async (ms: number) => { return new Promise((resolve) => setTimeout(resolve, ms)); }
 });
@@ -114,6 +115,33 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return stateData;
     }
+    
+       async function getGoalsForDao(daoId: number) {
+        if (!client || !currentWalletAddress) throw new Error("IOTA client or wallet not available");
+
+        const tx = new Transaction();
+        tx.moveCall({
+            target: `${PACKAGE_ID}::${MODULE}::view_goals_for_dao`,
+            arguments: [tx.object(STATE_OBJECT), tx.pure.u64(daoId)],
+        });
+
+        const result = await client.devInspectTransactionBlock({
+            transactionBlock: tx,
+            sender: currentWalletAddress,
+        });
+
+        // Get the event from the devInspect result
+        const event = result.events?.find(e => e.type === `${PACKAGE_ID}::dao::GoalsForDaoRetrieved`);
+        if (event) {
+            const goals = (event.parsedJson as any)?.goals || [];
+            return goals.map((g: any) => ({
+                goalId: g.id,
+                dao_id: g.dao_id,
+                ...JSON.parse(g.goal_uri)
+            }));
+        }
+        return [];
+    }
     async function getAllDaos(){
         const stateData = await fetchStateData();
         let loadedDaos: any[] = [];
@@ -185,7 +213,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
 
-    return <IOTAContext.Provider value={{ getAllDaos, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos, queryEvent, sleep }}>
+    return <IOTAContext.Provider value={{ getAllDaos,getGoalsForDao, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, daos, queryEvent, sleep }}>
         {children}
     </IOTAContext.Provider>
 };

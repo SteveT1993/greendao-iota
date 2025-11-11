@@ -21,7 +21,7 @@ export default function DAO() {
 	const [DaoURI, setDaoURI] = useState({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Date: "", logo: "", wallet: "", typeimg: "", allFiles: [], isOwner: false })
 	const [daoId, setDaoID] = useState(-1)
 	const { contract, signerAddress } = useContract()
-	const { daos, sleep } = useIOTA()
+	const { daos, sleep, getGoalsForDao } = useIOTA()
 	const [JoinmodalShow, setJoinmodalShow] = useState(false);
 	const [isJoined, setIsJoined] = useState(true)
 
@@ -34,9 +34,12 @@ export default function DAO() {
 		fetchContractData();
 	}, [daos])
 
-	setInterval(function () {
-		calculateTimeLeft()
-	}, 1000)
+	useEffect(() => {
+		if (document.getElementById("goal-container")) {
+			const root = createRoot(document.getElementById("goal-container"));
+			root.render(goal(list));
+		}
+	}, [list]);
 
 	if (isServer()) return null
 	const str = decodeURIComponent(window.location.search)
@@ -107,9 +110,6 @@ export default function DAO() {
 				if (dao) {
 					const daoURI = JSON.parse(dao.dao_uri);
 
-					// For now, no goals, so empty list
-					setList([]);
-
 					let daoURIShort = {
 						Title: daoURI.title,
 						Description: daoURI.description,
@@ -124,6 +124,22 @@ export default function DAO() {
 					setDaoURI(daoURIShort);
 					// For now, assume not joined
 					setIsJoined(false);
+
+					// Fetch goals for this DAO
+					const goals = await getGoalsForDao(Number(id));
+					const mappedGoals = goals.map(g => ({
+						goalId: g.goalId,
+						Title: g.properties?.Title?.description || g.Title,
+						Budget: g.properties?.Budget?.description || g.Budget,
+						End_Date: g.properties?.End_Date?.description || g.End_Date,
+						status: "Active", // Assuming active for now
+						logo: g.properties?.logo?.description?.url || g.logo
+					}));
+					setList(mappedGoals);
+
+					document.querySelector("#dao-container").innerHTML = dao.template;
+
+					document.querySelector("#dao-container").innerHTML = dao.template;
 
 					document.querySelector("#dao-container").innerHTML = dao.template;
 					if (document.querySelector(".btn-back") != null) {
@@ -153,8 +169,6 @@ export default function DAO() {
 							create_goal_block.style.display = "none";
 						}
 					}
-					const root = createRoot(document.getElementById("goal-container"));
-					root.render(goal([]));
 
 					if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 				}

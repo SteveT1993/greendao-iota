@@ -5,18 +5,19 @@ import UseFormTextArea from "../../components/components/UseFormTextArea";
 import { Header } from "../../components/layout/Header";
 import NavLink from "next/link";
 import { useRouter } from "next/router";
-import { Transaction, } from "@iota/iota-sdk/transactions";
 import isServer from "../../components/isServer";
 import styles from "./CreateDao.module.css";
 import { Button } from "@heathmont/moon-core-tw";
 import { GenericPicture, ControlsPlus } from "@heathmont/moon-icons-tw";
 import { Checkbox } from "@heathmont/moon-core-tw";
+import Loader from '../../components/Loader/Loader';
 
 import { useIPFSContext } from '../../contexts/IPFSContext';
 import { useIOTA } from '../../contexts/IOTAContext';
 
 export default function CreateDao() {
   const [DaoImage, setDaoImage] = useState([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { UploadBlob } = useIPFSContext();
   const { sendTransaction, currentWalletAddress, sleep } = useIOTA();
@@ -84,6 +85,7 @@ export default function CreateDao() {
   }
   //Function after clicking Create Dao Button
   async function createDao() {
+    setLoading(true);
     var CreateDAOBTN = document.getElementById("CreateDAOBTN");
     CreateDAOBTN.disabled = true;
     let allFiles = [];
@@ -124,7 +126,11 @@ export default function CreateDao() {
         key: "dao-image",
         value: allFiles[0].url
       }]
-      let formatted_template = formatTemplate(template,changings)
+      let formatted_template = template;
+      for (let i = 0; i < changings.length; i++) {
+        const element = changings[i];
+        formatted_template = formatted_template.replaceAll("{{"+element.key+"}}",element.value);		
+      }
      
     const tx = new Transaction();
     // Call IOTA Move contract using IOTAContext
@@ -139,7 +145,10 @@ export default function CreateDao() {
       router.push("/daos");
     } catch (error) {
       console.error(error);
+      setLoading(false);
+      CreateDAOBTN.disabled = false;
     }
+  
   }
 
   function FilehandleChange(dao) {
@@ -189,8 +198,6 @@ export default function CreateDao() {
     }
     setDaoImage(newImages);
   }
-
-
 
   return (
     <>
@@ -292,24 +299,9 @@ export default function CreateDao() {
               </div>
             </div>
           </div>
-
-          <div>
-            <Checkbox label="Generate Plugin" id="plugin" />
-          </div>
-          <CreateDaoBTN />
         </div>
       </div>
+      <Loader show={loading} text="Creating DAO..." />
     </>
   );
-}
-export function formatTemplate(template,changings){
-	
-
-
-	for (let i = 0; i < changings.length; i++) {
-		const element = changings[i];
-		template =template.replaceAll("{{"+element.key+"}}",element.value);		
-	}
-	return template;
-
 }

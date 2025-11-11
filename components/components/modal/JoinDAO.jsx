@@ -25,7 +25,7 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
     const [isLoading, setisLoading] = useState(false);
     const [isSent, setisSent] = useState(false);
     const { contract, signerAddress } = useContract()
-    const { Balance: IotaBalance, getAllDaos, currentWalletAddress, sendTransaction } = useIOTA();
+    const { Balance: IotaBalance, getAllDaos, currentWalletAddress, sendTransaction, sleep } = useIOTA();
 
     let alertBox = null;
     const [transaction, setTransaction] = useState({
@@ -73,6 +73,8 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
             const tx = new Transaction();
             const joinAddress = (currentWalletAddress || window?.ethereum?.selectedAddress)?.toString().toLocaleLowerCase();
             await sendTransaction(tx, "join_community", [Number(dao_id), joinAddress]);
+
+            await sleep(2000);
 
             ShowAlert("success", "Purchased Subscription successfully!");
             // best-effort refresh of on-chain data

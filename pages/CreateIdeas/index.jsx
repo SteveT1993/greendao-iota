@@ -5,16 +5,18 @@ import UseFormTextArea from "../../components/components/UseFormTextArea"
 import { Header } from "../../components/layout/Header"
 import NavLink from "next/link"
 
-import useContract from "../../services/useContract"
 import isServer from "../../components/isServer"
 import { useIPFSContext } from '../../contexts/IPFSContext';
 import styles from "./CreateIdeas.module.css"
 import { Button } from "@heathmont/moon-core-tw"
 import { GenericPicture, ControlsPlus } from "@heathmont/moon-icons-tw"
-
+import Loader from '../../components/Loader/Loader'
+import { Transaction } from "@iota/iota-sdk/transactions";
+import { useIOTA } from '../../contexts/IOTAContext'
 export default function CreateIdeas() {
 	const [IdeasImage, setIdeasImage] = useState([])
-	const { contract, signerAddress, sendTransaction } = useContract()
+	const [loading, setLoading] = useState(false);
+	const { sendTransaction, currentWalletAddress, sleep } = useIOTA()
 	
 	const {UploadBlob} = useIPFSContext(); 
 	if (isServer()) return null;
@@ -59,9 +61,8 @@ export default function CreateIdeas() {
 	}
 
 	let id = -1
-
-	//Function after clicking Create Ideas Button
 	async function createIdeas() {
+		setLoading(true);
 		var CreateIdeasBTN = document.getElementById("CreateIdeasBTN")
 		CreateIdeasBTN.disabled = true
 		let allFiles = []
@@ -108,7 +109,7 @@ export default function CreateIdeas() {
 				},
 				wallet: {
 					type: "string",
-					description: signerAddress // Now IOTA address
+					description: currentWalletAddress // Now IOTA address
 				},
 				logo: {
 					type: "string",
@@ -119,13 +120,20 @@ export default function CreateIdeas() {
 		}
 		console.log("======================>Creating Ideas")
 		try {
+			const tx = new Transaction();
 			// Creating Ideas in Smart contract
-			await sendTransaction(await window.contract.populateTransaction.create_ideas(JSON.stringify(createdObject), Number(id), smart_contracts,signerAddress.toLocaleLowerCase()))
+			await sendTransaction(tx, 'create_ideas', [tx.pure.string(JSON.stringify(createdObject)), tx.pure.u64(Number(id)), tx.pure.string(currentWalletAddress.toLocaleLowerCase())])
+
+			await sleep(2000);
+
 		} catch (error) {
 			console.error(error)
+			setLoading(false);
+			CreateIdeasBTN.disabled = false;
 			return
 			window.location.href = "/login?[/]" //If found any error then it will let the user to login page
 		}
+		setLoading(false);
 		window.location.href = `daos/dao/goal?[${id}]` //After the success it will redirect the user to goal page
 	}
 
@@ -276,6 +284,7 @@ export default function CreateIdeas() {
 					<CreateIdeasBTN />
 				</div>
 			</div>
+			<Loader show={loading} text="Creating Ideas..." />
 		</>
 	)
 }

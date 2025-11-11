@@ -5,15 +5,18 @@ import UseFormTextArea from "../../components/components/UseFormTextArea";
 import { Header } from "../../components/layout/Header";
 import NavLink from "next/link";
 import isServer from "../../components/isServer";
-import useContract from '../../services/useContract';
 import styles from "./CreateGoal.module.css";
 import { Button } from "@heathmont/moon-core-tw";
 import { GenericPicture, ControlsPlus } from "@heathmont/moon-icons-tw";
+import Loader from '../../components/Loader/Loader';
+import { Transaction } from "@iota/iota-sdk/transactions";
 
 import { useIPFSContext } from '../../contexts/IPFSContext';
+import { useIOTA } from '../../contexts/IOTAContext';
 export default function CreateGoal() {
   const [GoalImage, setGoalImage] = useState([]);
-  const { contract, signerAddress,sendTransaction } = useContract()
+  const [loading, setLoading] = useState(false);
+  const { sendTransaction, currentWalletAddress, sleep } = useIOTA()
   const {UploadBlob} = useIPFSContext(); 
   if (isServer()) return null;
 
@@ -73,6 +76,7 @@ export default function CreateGoal() {
 
   //Function after clicking Create Goal Button
   async function createGoal() {
+    setLoading(true);
     var CreateGoalBTN = document.getElementById("CreateGoalBTN");
     CreateGoalBTN.disabled = true;
     let allFiles = [];
@@ -110,7 +114,7 @@ export default function CreateGoal() {
         },
         wallet: {
           type: "string",
-          description: signerAddress, // Now IOTA address
+          description: currentWalletAddress, // Now IOTA address
         },
         logo: {
           type: "string",
@@ -121,15 +125,20 @@ export default function CreateGoal() {
     };
     console.log("======================>Creating Goal");
     try {
-
+      const tx = new Transaction();
       // Creating Goal in Smart contract
-      await sendTransaction(await window.contract.populateTransaction.create_goal(JSON.stringify(createdObject),Number(id),signerAddress.toLocaleLowerCase()));
+      await sendTransaction(tx, 'create_goal', [tx.pure.string(JSON.stringify(createdObject)), tx.pure.u64(Number(id)), tx.pure.string(currentWalletAddress.toLocaleLowerCase())]);
+
+      await sleep(2000);
 
     } catch (error) {
       console.error(error);
+      setLoading(false);
+      CreateGoalBTN.disabled = false;
       return;
       // window.location.href = "/login?[/]"; //If found any error then it will let the user to login page
     }
+    setLoading(false);
     window.location.href = `/daos/dao?[${id}]`; //After the success it will redirect the user to dao page
 
   }
@@ -139,7 +148,9 @@ export default function CreateGoal() {
       <>
         <div className="flex gap-4 justify-end">
           <NavLink href="/daos">
-            <Button variant="secondary">Cancel</Button>
+            <span>
+              <Button variant="secondary">Cancel</Button>
+            </span>
           </NavLink>
           <Button id="CreateGoalBTN" onClick={createGoal}>
             <ControlsPlus className="text-moon-24" />
@@ -322,6 +333,7 @@ export default function CreateGoal() {
           <CreateGoalBTN />
         </div>
       </div>
+      <Loader show={loading} text="Creating Goal..." />
     </>
   );
 }
