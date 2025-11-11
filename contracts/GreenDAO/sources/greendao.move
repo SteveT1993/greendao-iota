@@ -11,6 +11,7 @@ module 0x0::dao {
 	/// DAO Structs
 	public struct DaoURI has key, store {
 		id: UID,
+		dao_id: u64,
 		dao_wallet: string::String,
 		dao_uri: string::String,
 		finished: bool,
@@ -19,12 +20,14 @@ module 0x0::dao {
 
 	public struct GoalURI has key, store {
 		id: UID,
+		goal_id: u64,
 		dao_id: u64,
 		goal_uri: string::String
 	}
 
 	public struct IdeasURI has key, store {
 		id: UID,
+		ideas_id: u64,
 		goal_id: u64,
 		ideas_uri: string::String,
 		donation: u64
@@ -32,6 +35,7 @@ module 0x0::dao {
 
 	public struct Donation has key, store {
 		id: UID,
+		donation_id: u64,
 		ideas_id: u64,
 		wallet: string::String,
 		donation: u64
@@ -39,6 +43,7 @@ module 0x0::dao {
 
 	public struct Join has store {
 		id: UID,
+		join_id: u64,
 		dao_id: u64,
 		wallet: string::String
 	}
@@ -184,6 +189,7 @@ module 0x0::dao {
 		let template_str = string::utf8(template);
 		let dao = DaoURI {
 			id: iota::object::new(ctx),
+			dao_id: id,
 			dao_wallet: dao_wallet_str,
 			dao_uri: dao_uri_str,
 			finished: false,
@@ -227,6 +233,7 @@ module 0x0::dao {
 		let wallet_str = string::utf8(wallet);
 		let goal = GoalURI {
 			id: iota::object::new(ctx),
+			goal_id: id,
 			dao_id,
 			goal_uri: goal_uri_str
 		};
@@ -267,6 +274,7 @@ module 0x0::dao {
 		let wallet_str = string::utf8(wallet);
 		let ideas = IdeasURI {
 			id: iota::object::new(ctx),
+			ideas_id: id,
 			goal_id,
 			ideas_uri: ideas_uri_str,
 			donation: 0
@@ -307,6 +315,7 @@ module 0x0::dao {
 		let donator_str = string::utf8(donator);
 		let d = Donation {
 			id: iota::object::new(ctx),
+			donation_id: id,
 			ideas_id,
 			wallet: donator_str,
 			donation
@@ -345,6 +354,7 @@ module 0x0::dao {
 		let person_str = string::utf8(person);
 		let join = Join {
 			id: iota::object::new(ctx),
+			join_id: id,
 			dao_id,
 			wallet: person_str
 		};

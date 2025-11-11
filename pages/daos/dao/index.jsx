@@ -13,6 +13,7 @@ import { Button } from "@heathmont/moon-core-tw"
 import Skeleton from "@mui/material/Skeleton"
 import JoinDAO from "../../../components/components/modal/JoinDAO";
 import { useIOTA } from "../../../contexts/IOTAContext";
+import Loader from '../../../components/Loader/Loader'
 let running = true
 export default function DAO() {
 	//Variables
@@ -98,7 +99,11 @@ export default function DAO() {
 			if (daos && daos.length > 0 && id) {
 				setDaoID(Number(id))
 
-				const dao = daos.find(d => d.id.id === id);
+				const dao = daos.find(d => {
+					// Match using the new numeric dao_id field when available, otherwise fall back to uid string
+					const numeric = d.dao_id ?? (d.id && d.id.id) ?? d.id;
+					return String(numeric) === String(id);
+				});
 				if (dao) {
 					const daoURI = JSON.parse(dao.dao_uri);
 
@@ -184,6 +189,7 @@ export default function DAO() {
 	return (
 		<>
 			<Header></Header>
+			<Loader show={running} text={"Loading DAO..."} />
 			<Head>
 				<title>DAO</title>
 				<meta name="description" content="DAO" />

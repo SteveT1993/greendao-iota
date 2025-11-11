@@ -11,6 +11,7 @@ import { ControlsChevronRight,GenericEdit } from "@heathmont/moon-icons-tw"
 import { Button } from "@heathmont/moon-core-tw"
 import Skeleton from "@mui/material/Skeleton"
 import { useIOTA } from "../../contexts/IOTAContext";
+import Loader from '../../components/Loader/Loader'
 
 let running = true
 export default function DAOs() {
@@ -49,8 +50,10 @@ export default function DAOs() {
 			if (daos && daos.length > 0) {
 				const arr = daos.map(d => {
 					const daoURI = JSON.parse(d.dao_uri);
+					// Prefer numeric dao_id if present, otherwise fall back to object UID
+					const numericId = d.dao_id ?? (d.id && d.id.id) ?? d.id;
 					return {
-						daoId: d.id.id,
+						daoId: numericId,
 						Title: daoURI.title,
 						Start_Date: daoURI.start_date,
 						logo: daoURI.logo,
@@ -61,6 +64,8 @@ export default function DAOs() {
 				setList(arr);
 				if (document.getElementById("Loading"))  document.getElementById("Loading").style = "display:none";
 			}
+							if (document.getElementById("Loading"))  document.getElementById("Loading").style = "display:none";
+
 		} catch (error) {
 		}
 		running = false
@@ -94,6 +99,7 @@ export default function DAOs() {
 	return (
 		<>
 			<Header></Header>
+			<Loader show={running} text={"Loading DAOs..."} />
 			<Head>
 				<title>DAO</title>
 				<meta name="description" content="DAO" />

@@ -1833,6 +1833,11 @@ video {
   background-color: rgb(var(--goten));
 }
 
+.bg-gray-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
+}
+
 .bg-piccolo {
   background-color: rgb(var(--piccolo));
 }
@@ -2191,6 +2196,11 @@ video {
 .text-\[\#0000ff\] {
   --tw-text-opacity: 1;
   color: rgb(0 0 255 / var(--tw-text-opacity, 1));
+}
+
+.text-black {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity, 1));
 }
 
 .text-bulma {

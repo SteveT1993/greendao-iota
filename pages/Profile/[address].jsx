@@ -213,24 +213,25 @@ export default function Profile() {
 
 	return (
 		<>
-			<Header></Header>
 			<Head>
 				<title>Profile</title>
 				<meta name="description" content="Profile" />
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
-
-
+			<Header></Header>
 			<div className={`${styles.container} flex items-center flex-col gap-8 relative`}>
 				<div className={`${styles.title} gap-8 flex flex-col relative`}>
 					<div className={styles.avatarContainer}>
 						<div className={styles.topicAvatar}>
-							<div className="post-avatar" style={{
-								display: 'flex',
-								alignItems: 'center',
-								gap: '1rem'
-							}}>
-								<a className="trigger-user-card main-avatar " aria-hidden="true" tabIndex={-1}>
+							
+							
+							
+							
+						
+						
+						
+						
+						<a className="trigger-user-card main-avatar " aria-hidden="true" tabIndex={-1}>
 									<svg width={45} height={45} xmlns="http://www.w3.org/2000/svg" style={{ fill: "var(--foreground)" }} viewBox="0 0 459 459">
 										<g>
 											<g>

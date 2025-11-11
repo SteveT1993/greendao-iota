@@ -9,6 +9,7 @@ import UseFormTextArea from "../../../../../components/components/UseFormTextAre
 import isServer from "../../../../../components/isServer";
 import DonateCoin from "../../../../../components/components/modal/DonateCoin";
 import { Header } from "../../../../../components/layout/Header";
+import Loader from '../../../../../components/Loader/Loader'
 import styles from "../../../daos.module.css";
 import Skeleton from "@mui/material/Skeleton";
 import CommentBox from "../../../../../components/components/Card/Comment";

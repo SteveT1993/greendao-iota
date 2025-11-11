@@ -21,6 +21,8 @@ export default function DesignDao() {
   const [list, setList] = useState([]);
 
   const [editor, setEditor] = useState(null);
+  const [editorLoading, setEditorLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const regex = /\[(.*)\]/g
   let m
   let id = "" //id from url
@@ -428,6 +430,7 @@ export default function DesignDao() {
       }
     });
     setEditor(editor);
+  setEditorLoading(false);
 
     // If the standard basic blocks plugin didn't register (due to CDN block or timing),
     // add a small fallback set of useful blocks so the editor isn't empty.
@@ -480,12 +483,21 @@ export default function DesignDao() {
   }
 
   async function SaveHTML() {
+    if (!editor) return;
     let output = editor.getHtml() + "<style>" + editor.getCss() + "</style>";
 
     // Build and send an IOTA Move transaction to update the template
     const tx = new Transaction();
-    // Use tx.pure helpers so arguments are serialized for Move: u64 id and string template
-    await sendTransaction(tx, 'update_template', [tx.pure.u64(Number(id)), tx.pure.string(output)]);
+    setSaving(true);
+    try {
+      // Use tx.pure helpers so arguments are serialized for Move: u64 id and string template
+      await sendTransaction(tx, 'update_template', [tx.pure.u64(Number(id)), tx.pure.string(output)]);
+    } catch (e) {
+      console.error('SaveHTML error', e);
+      throw e;
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function fetchContractData() {
@@ -494,7 +506,8 @@ export default function DesignDao() {
     try {
       if (daos && id != null) {
         // find the dao object provided by IOTA context
-        const dao = daos.find(d => String(d?.id?.id) === String(id) || String(d?.id) === String(id));
+        const dao = daos.find(d => String(d?.id?.id) === String(id) || String(d?.dao_id) === String(id));
+        console.log(dao);
         if (dao) {
           // dao.dao_uri may be stored as a move value object or raw string; handle both
           const daoUriRaw = dao.dao_uri?.value || dao.dao_uri;
@@ -545,8 +558,28 @@ export default function DesignDao() {
       <div style={{
         display: 'flex',
         justifyContent: 'flex-end',
-        padding: '12px 2rem'
-      }}><button onClick={SaveHTML} className={button_class + " px-8"}>Save</button></div>
+        padding: '12px 2rem',
+        gap: '12px',
+        alignItems: 'center'
+      }}>
+        {/* Loader overlay indicator (small) */}
+        {(editorLoading || saving) && (
+          <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '8px', color: '#444' }}>
+            <svg width="20" height="20" viewBox="0 0 50 50" style={{ animation: 'spin 1s linear infinite' }}>
+              <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="4" strokeLinecap="round" strokeDasharray="31.4 31.4" transform="rotate(-90 25 25)"></circle>
+            </svg>
+            <span>{editorLoading ? 'Loading editor...' : (saving ? 'Saving...' : '')}</span>
+            <style>{'@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }'}</style>
+          </div>
+        )}
+
+        <button disabled={saving} onClick={() => { window.location.href = `/daos/dao?[${id}]`; }} className={button_class + " px-6 bg-gray-200 text-black"}>
+          View DAO
+        </button>
+        <button disabled={saving || editorLoading} onClick={SaveHTML} className={button_class + " px-8"}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
     </div>
 
   );

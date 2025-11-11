@@ -3,6 +3,7 @@ import Head from "next/head"
 import NavLink from "next/link"
 import useContract from "../../../../services/useContract"
 import { useIOTA } from '../../../../contexts/IOTAContext'
+import Loader from '../../../../components/Loader/Loader'
 
 import { Header } from "../../../../components/layout/Header"
 import isServer from "../../../../components/isServer"
@@ -143,6 +144,7 @@ export default function Goal() {
 	}
 	return (
 		<>
+			<Loader show={running} text={"Loading goal..."} />
 			<Header></Header>
 			<Head>
 				<title>Goal</title>
