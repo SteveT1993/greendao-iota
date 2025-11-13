@@ -201,7 +201,7 @@ useEffect(() => {
 						</NavLink>
 						{!GoalURI.isOwner ? (
 							<>
-								<a href={daoId >= 0 ? `/CreateIdeas?daoId=${daoId}&goalId=${goalId}` : `/CreateIdeas?[${goalId}]`}>
+								<a href={`/CreateIdeas?[${goalId}]`}>
 									<Button style={{ width: "150px", position: "absolute", right: "1rem" }} iconLeft>
 										<ControlsPlus className="text-moon-24" />
 										<div className="card BidcontainerCard">
@@ -247,7 +247,7 @@ useEffect(() => {
 												{LeftDate(GoalURI.End_Date, listItem.status)}
 											</div>
 
-										<a href={daoId >= 0 ? `/daos/${daoId}/goals/${goalId}/ideas/${listItem.ideasId}` : `/daos/dao/goal/ideas?[${listItem.ideasId}]`}>
+										<a href={daoId >= 0 ? `/daos/dao/goals/${goalId}/ideas/${listItem.ideasId}` : `/daos/dao/goal/ideas?[${listItem.ideasId}]`}>
 											<Button iconleft>
 												<ControlsChevronRight />
 												See more

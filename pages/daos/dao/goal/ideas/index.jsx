@@ -39,18 +39,7 @@ export default function GrantIdeas() {
 	});
 	const [emptydata, setemptydata] = useState([])
 
-	const [CommentsList, setCommentsList] = useState([{
-		id: 0,
-		comment: "",
-		address: "",
-		date: "",
-		replies: [{
-			id: 0,
-			message: "",
-			address: "",
-			date: ""
-		}]
-	}]);
+	const [CommentsList, setCommentsList] = useState([]);
 	
 	const router = useRouter();
 	let m;
@@ -174,53 +163,48 @@ export default function GrantIdeas() {
 
 				setimageList(object.properties.allFiles);
 
-				// Comments and Replies
-				const totalComments = await getMsgIDs(Number(id)) //Getting total comments (Number) of this idea
-				// const arr = []
-				for (let i = 0; i < Object.keys(totalComments).length; i++) {
-					//total comments number Iteration
-					const commentId = Number(totalComments[i]);
+				// Comments and Replies: build locally then set once
+				const totalComments = await getMsgIDs(Number(id));
+		
+				const builtComments = [];
+				for (let ci = 0; ci < (totalComments).length; ci++) {
+					const commentId = Number(totalComments[ci]);
 					if (isNaN(commentId) || commentId < 0) {
 						console.error("Invalid commentId:", commentId);
 						continue;
 					}
 					let commentInfo = await getAllMessages(commentId);
 					try {
-						const object = JSON.parse(commentInfo)
-						let newComment = {
-							address: object.address,
-							message: object.message,
-							date: object.date,
-							id: object.id,
-							replies: []
-						};
+						const outer = JSON.parse(commentInfo);
+						let inner = null;
+						try { inner = JSON.parse(outer.message); } catch (e) { inner = null; }
+						const address = outer.sender ?? outer.address ?? (inner && inner.address) ? inner.address : "";
+						const messageText = (inner && inner.message) ? inner.message : (outer.message ?? "");
+						const date = (inner && inner.date) ? inner.date : (outer.date ?? "");
+						const cid = outer.id ?? (inner && inner.id) ?? commentId;
+						let newComment = { address, message: messageText, date, id: cid, replies: [] };
 
-						const totalReplies = await getReplyIDs(Number(commentId)) //Getting total replies (Number) of this comment
-						for (let i = 0; i < Object.keys(totalReplies).length; i++) {
-							const replyId = Number(totalReplies[i]);
-							if (isNaN(replyId) || replyId < 0) {
-								console.error("Invalid replyId:", replyId);
-								continue;
-							}
+						const totalReplies = await getReplyIDs(Number(commentId));
+						for (let ri = 0; ri < Object.keys(totalReplies).length; ri++) {
+							const replyId = Number(totalReplies[ri]);
+							if (isNaN(replyId) || replyId < 0) { console.error("Invalid replyId:", replyId); continue; }
 							let replyInfo = await getAllReplies(replyId);
 							try {
-								const object = JSON.parse(replyInfo)
-								let newReply = {
-									id: object.id,
-									message: object.message,
-									address: object.address,
-									date: object.date
-								};
-								newComment.replies.push(newReply)
-							} catch (parseErr) {
-								console.error("Failed to parse replyInfo:", replyInfo, parseErr);
-							}
+								const outerR = JSON.parse(replyInfo);
+								let innerR = null; try { innerR = JSON.parse(outerR.message); } catch (e) { innerR = null; }
+								const replyMessage = (innerR && innerR.message) ? innerR.message : (outerR.message ?? "");
+								const replyAddress = outerR.sender ?? outerR.address ?? (innerR && innerR.address) ? innerR.address : "";
+								const replyDate = (innerR && innerR.date) ? innerR.date : (outerR.date ?? "");
+								const rid = outerR.id ?? (innerR && innerR.id) ?? replyId;
+								newComment.replies.push({ id: rid, message: replyMessage, address: replyAddress, date: replyDate });
+							} catch (parseErr) { console.error("Failed to parse replyInfo:", replyInfo, parseErr); }
 						}
-						CommentsList.push(newComment);
+						builtComments.push(newComment);
 					} catch (parseErr) {
 						console.error("Failed to parse commentInfo:", commentInfo, parseErr);
 					}
 				}
+				setCommentsList(builtComments);
 				removeElementFromArrayBYID(emptydata, 0, setemptydata)
 				if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 			}
@@ -340,19 +324,19 @@ export default function GrantIdeas() {
 			address: signerAddress.toLowerCase(),
 			message: Comment,
 			date: new Date().toISOString(),
-			id: messLatestId
+			id: messLatestId,
+			replies: []
 		};
 		await saveMessage(newComment);
-		newComment.replies = [];
-		CommentsList.push(newComment);
+		setCommentsList(prev => [...prev, newComment]);
 		setComment("");
-		removeElementFromArrayBYID(emptydata, 0, setemptydata)
+		removeElementFromArrayBYID(emptydata, 0, setemptydata);
 	}
 	async function saveMessage(newComment) {
 		const tx = new Transaction();
-		await sendTransaction(tx, 'sendMsg', [tx.pure.u64(Number(ideaId)), tx.pure.string(JSON.stringify(newComment)), tx.pure.address(signerAddress)]);
-		removeElementFromArrayBYID(emptydata, 0, setemptydata)
-		console.log("Saved Messages")
+		await sendTransaction(tx, 'sendMsg', [tx.pure.u64(Number(ideaId)), tx.pure.string(JSON.stringify(newComment)), tx.pure.string(signerAddress)]);
+		removeElementFromArrayBYID(emptydata, 0, setemptydata);
+		console.log("Saved Messages");
 	}
 	async function sendReply(replyText, MessageId, MessageIndex) {
 		let replyLatestId = await getReplyIds();
@@ -362,11 +346,18 @@ export default function GrantIdeas() {
 			address: signerAddress.toLowerCase(),
 			date: new Date().toISOString()
 		};
-		CommentsList[MessageIndex].replies.push(newReply);
+		// Update UI state immutably
+		setCommentsList(prev => {
+			const copy = prev.map(c => ({ ...c, replies: Array.isArray(c.replies) ? [...c.replies] : [] }));
+			if (copy[MessageIndex]) {
+				copy[MessageIndex].replies.push(newReply);
+			}
+			return copy;
+		});
 		const tx = new Transaction();
-		await sendTransaction(tx, 'sendReply', [tx.pure.u64(Number(MessageId)), tx.pure.string(JSON.stringify(newReply)), tx.pure.u64(Number(ideaId)), tx.pure.address(signerAddress)]);
-		removeElementFromArrayBYID(emptydata, 0, setemptydata)
-		console.log("Saved Reply")
+		await sendTransaction(tx, 'sendReply', [tx.pure.u64(Number(MessageId)), tx.pure.string(JSON.stringify(newReply)), tx.pure.string(signerAddress), tx.pure.u64(Number(ideaId))]);
+		removeElementFromArrayBYID(emptydata, 0, setemptydata);
+		console.log("Saved Reply");
 	}
 
 	  

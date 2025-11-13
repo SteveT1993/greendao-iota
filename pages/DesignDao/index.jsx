@@ -492,6 +492,7 @@ export default function DesignDao() {
     try {
       // Use tx.pure helpers so arguments are serialized for Move: u64 id and string template
       await sendTransaction(tx, 'update_template', [tx.pure.u64(Number(id)), tx.pure.string(output)]);
+      await sleep(8000);
     } catch (e) {
       console.error('SaveHTML error', e);
       throw e;
@@ -507,7 +508,7 @@ export default function DesignDao() {
       if (daos && id != null) {
         // find the dao object provided by IOTA context
         const dao = daos.find(d => String(d?.id?.id) === String(id) || String(d?.dao_id) === String(id));
-        console.log(dao);
+ 
         if (dao) {
           // dao.dao_uri may be stored as a move value object or raw string; handle both
           const daoUriRaw = dao.dao_uri?.value || dao.dao_uri;

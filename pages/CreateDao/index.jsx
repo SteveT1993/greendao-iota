@@ -137,7 +137,7 @@ export default function CreateDao() {
     try {
       const txOutput = await sendTransaction(tx,FUNCTION, [tx.pure.string(dao_wallet), tx.pure.string(dao_uri), tx.pure.string(formatted_template)]);
      
-  await sleep(5000);
+  await sleep(8000);
       router.push("/daos");
     } catch (error) {
       console.error(error);

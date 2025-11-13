@@ -149,6 +149,20 @@
 		donations: vector<DonationRetrieved>
 	}
 
+	public struct MessageRetrieved has copy, drop {
+		id: u64,
+		ideas_id: u64,
+		sender: string::String,
+		message: string::String
+	}
+
+	public struct ReplyRetrieved has copy, drop {
+		id: u64,
+		message_id: u64,
+		ideas_id: u64,
+		message: string::String
+	}
+
 	public struct JoinsForDaoRetrieved has copy, drop {
 		dao_id: u64,
 		joins: vector<JoinRetrieved>
@@ -358,6 +372,11 @@
 			donation
 		};
 		table::add(&mut state.donations, id, d);
+		// Update idea's donation total
+		if (table::contains(&state.ideas, ideas_id)) {
+			let mut idea = table::borrow_mut(&mut state.ideas, ideas_id);
+			idea.donation = idea.donation + donation;
+		};
 		// Update badge
 		if (table::contains(&state.user_badges, donator_str)) {
 			let b = table::borrow_mut(&mut state.user_badges, donator_str);
@@ -803,20 +822,15 @@
 		  ids
 	  }
 
-	public fun all_messages(state: &State, id: u64): string::String {
+	public fun all_messages(state: &State, id: u64) {
 		let msg = table::borrow(&state.messages, id);
-		// Build JSON: {"sender":"...","message":"...","id":...}
-		let mut json = string::utf8(b"{\"sender\":\"");
-		// append sender
-		string::append(&mut json, string::utf8(*string::as_bytes(&msg.sender)));
-		string::append(&mut json, string::utf8(b"\",\"message\":\""));
-		// append message
-		string::append(&mut json, string::utf8(*string::as_bytes(&msg.message)));
-		string::append(&mut json, string::utf8(b"\",\"id\":"));
-		let id_str = u64_to_string(id);
-		string::append(&mut json, id_str);
-		string::append(&mut json, string::utf8(b"}"));
-		json
+		// Emit message event with sender, message and id
+		event::emit(MessageRetrieved {
+			id,
+			ideas_id: msg.ideas_id,
+			sender: msg.sender,
+			message: msg.message
+		});
 	}
 
 	public fun getReplyIDs(state: &State, message_id: u64): vector<u64> {
@@ -834,19 +848,15 @@
 		ids
 	}
 
-	public fun all_replies(state: &State, id: u64): string::String {
+	public fun all_replies(state: &State, id: u64) {
 		let reply = table::borrow(&state.replies, id);
-		// Build JSON: {"message":"...","ideas_id":...,"id":...}
-		let mut json = string::utf8(b"{\"message\":\"");
-		string::append(&mut json, string::utf8(*string::as_bytes(&reply.message)));
-		string::append(&mut json, string::utf8(b"\",\"ideas_id\":"));
-		let ideas_id_str = u64_to_string(reply.ideas_id);
-		string::append(&mut json, ideas_id_str);
-		string::append(&mut json, string::utf8(b",\"id\":"));
-		let id_str = u64_to_string(id);
-		string::append(&mut json, id_str);
-		string::append(&mut json, string::utf8(b"}"));
-		json
+		// Emit reply event with message, ideas_id and id
+		event::emit(ReplyRetrieved {
+			id,
+			message_id: reply.message_id,
+			ideas_id: reply.ideas_id,
+			message: reply.message
+		});
 	}
 
 	public fun message_ids(state: &State): u64 {

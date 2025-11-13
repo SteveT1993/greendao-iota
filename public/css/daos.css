@@ -44,3 +44,19 @@
     overflow: hidden;
     object-fit: cover;
   }
+
+  
+.tab-container-screen{
+  
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+
+}
+
+.profile-container{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}

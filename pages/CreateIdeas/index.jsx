@@ -123,7 +123,8 @@ export default function CreateIdeas() {
 			const tx = new Transaction();
 			// Creating Ideas in Smart contract
 			await sendTransaction(tx, 'create_ideas', [tx.pure.string(JSON.stringify(createdObject)), tx.pure.u64(Number(id)), tx.pure.string(currentWalletAddress.toLocaleLowerCase())])
-await sleep(5000);
+  await sleep(8000);
+
 		} catch (error) {
 			console.error(error)
 			setLoading(false);

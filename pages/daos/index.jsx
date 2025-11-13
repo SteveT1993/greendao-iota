@@ -147,7 +147,7 @@ export default function DAOs() {
 										</div>
 										<div className="flex align-center flex justify-end align-center gap-2">
 
-										{(listItem.isOwner) &&	<a href={`/DesignDao?daoId=${listItem.daoId}`}>
+										{(listItem.isOwner) &&	<a href={`/DesignDao?[${listItem.daoId}]`}>
 												<Button iconLeft>
 													<GenericEdit />
 													Customize

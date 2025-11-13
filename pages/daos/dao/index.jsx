@@ -167,7 +167,7 @@ export default function DAO() {
 					let create_goal_block = document.querySelector(".create-goal-block");
 					if (create_goal_block != null) {
 						document.querySelector(".create-goal-block").addEventListener('click', () => {
-							window.location.href = `/CreateGoal?daoId=${id}`;
+							window.location.href = `/CreateGoal?[${id}]`;
 						});
 					}
 

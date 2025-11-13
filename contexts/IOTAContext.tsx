@@ -182,10 +182,27 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (Array.isArray(valueCandidate) && valueCandidate.every((n: any) => typeof n === 'number')) {
             try {
                 const numArr = valueCandidate as number[];
+                // Heuristic: BCS-encoded vector<u64> often encodes as [len, <8*len bytes little-endian>]
+                if (numArr.length >= 1 && ((numArr.length - 1) % 8) === 0) {
+                    const count = numArr[0];
+                    if (1 + count * 8 === numArr.length) {
+                        const out: string[] = [];
+                        for (let i = 0; i < count; i++) {
+                            let value = BigInt(0);
+                            for (let b = 0; b < 8; b++) {
+                                const byte = BigInt(numArr[1 + i * 8 + b]);
+                                value |= byte << (BigInt(8) * BigInt(b));
+                            }
+                            out.push(value.toString());
+                        }
+                        return out;
+                    }
+                }
+
                 // If length <= 8 and contains small integers, it could be a little-endian u64
                 if (numArr.length > 0 && numArr.length <= 8 && numArr.every(n => Number.isInteger(n) && n >= 0 && n <= 255)) {
                     // Interpret as little-endian unsigned integer
-                    let value = 0n;
+                        let value = BigInt(0);
                     for (let i = 0; i < numArr.length; i++) {
                         value |= BigInt(numArr[i]) << (BigInt(8) * BigInt(i));
                     }
@@ -328,35 +345,54 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 transactionBlock: tx,
                 sender: currentWalletAddress,
             });
+
             const val = extractDevInspectValue(result);
-            // Normalize to an array of JSON strings representing each idea URI
-            const deepUnwrap = (v: any): any => {
+
+            // Helper to decode numeric byte arrays into UTF-8 strings
+            const decodeBytes = (arr: any) => {
                 try {
-                    if (Array.isArray(v) && v.length === 1) return deepUnwrap(v[0]);
-                    return v;
+                    if (!Array.isArray(arr)) return String(arr);
+                    const bytes = Uint8Array.from(arr.map((n: any) => Number(n)));
+                    return new TextDecoder().decode(bytes);
                 } catch (e) {
-                    return v;
+                    return String(arr);
                 }
             };
-            const candidate = deepUnwrap(val);
-            if (!candidate && candidate !== 0) return [];
-            // If already an array of strings or numbers, stringify each element if needed
-            if (Array.isArray(candidate)) {
-                return candidate.map((el: any) => (typeof el === 'string' ? el : (el)));
+
+            if (Array.isArray(val)) {
+                const out: string[] = [];
+                for (const el of val) {
+                    if (typeof el === 'string') { out.push(el); continue; }
+                    if (Array.isArray(el) && el.every((n: any) => typeof n === 'number')) {
+                        const decoded = decodeBytes(el);
+                        // Try parse JSON array
+                        try {
+                            const parsed = JSON.parse(decoded);
+                            if (Array.isArray(parsed)) {
+                                out.push(...parsed.map((p: any) => (typeof p === 'string' ? p : JSON.stringify(p))));
+                                continue;
+                            }
+                        } catch (e) {}
+                        out.push(decoded);
+                        continue;
+                    }
+                    out.push(typeof el === 'object' ? JSON.stringify(el) : String(el));
+                }
+                return out;
             }
-            // If it's a string that encodes an array
-            if (typeof candidate === 'string') {
+
+            if (typeof val === 'string') {
                 try {
-                    const parsed = JSON.parse(candidate);
+                    const parsed = JSON.parse(val);
                     if (Array.isArray(parsed)) return parsed.map((el: any) => (typeof el === 'string' ? el : JSON.stringify(el)));
                 } catch (e) {
-                    // Not JSON; assume it's a single string representing one URI
-                    return [candidate];
+                    return [val];
                 }
             }
-            // Fallback: return single stringified value
-            return [(candidate)];
+
+            return [String(val)];
         } catch (e) {
+            console.error('getAllIdeasByGoalId error', e);
             return [];
         }
     }
@@ -400,25 +436,6 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (e) {
             console.error(e);
             return "";
-        }
-    }
-    async function getGoalIdFromIdeasUri(uri: string) {
-        if (!client || !currentWalletAddress) return 0;
-        const tx = new Transaction();
-        tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::get_goal_id_from_ideas_uri`,
-            arguments: [tx.object(STATE_OBJECT), tx.pure.string(uri)],
-        });
-        try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
-            const val = extractDevInspectValue(result);
-            return Number(val ?? 0);
-        } catch (e) {
-            console.error(e);
-            return 0;
         }
     }
     async function getUserBadge(wallet: string) {
@@ -472,7 +489,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             };
 
-            const extractAddressesFromString = (s: string) => {
+            const extractAddressesFromString = (s: string): string[] => {
                 // Try JSON first
                 try {
                     const parsed = JSON.parse(s);
@@ -559,11 +576,11 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const normalized = normalize(candidate);
             // Remove duplicates and empty strings
             const cleaned = Array.from(new Set(normalized.map(s => String(s).trim()).filter(Boolean)));
+            if (cleaned[0] === "0") cleaned.shift(); // remove lone "0x" entries if present
             if (cleaned.length === 0 && val) {
                 console.warn("getIdeasVotesFromGoal: normalization produced empty array; raw val:", val);
             }
-            // debug log for development (can remove later)
-            // console.log('getIdeasVotesFromGoal ->', { candidate, cleaned });
+            
             return cleaned;
         } catch (e) {
             console.error(e);
@@ -587,7 +604,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 sender: currentWalletAddress,
             });
             const val = extractDevInspectValue(result);
-            return Number(val ?? 0) / 1e9;
+            return ParseBigNumber(Number(val ?? 0));
         } catch (e) {
             console.error(e);
             return 0;
@@ -609,7 +626,11 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 transactionBlock: tx,
                 sender: currentWalletAddress,
             });
+		
+
             const val = extractDevInspectValue(result);
+            		
+         
             if (Array.isArray(val)) return val.map((x: any) => Number(x));
             // sometimes it's encoded as a JSON string
             if (typeof val === 'string') {
@@ -637,26 +658,24 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 transactionBlock: tx,
                 sender: currentWalletAddress,
             });
-            const val = extractDevInspectValue(result);
-            // Ensure we always return a valid JSON string for callers that expect to JSON.parse
-            if (!val && val !== 0) return "{}";
-            if (typeof val === 'string') {
-                // Validate it's parseable JSON
+
+            // Prefer event payload if Move emitted a MessageRetrieved event
+            const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::MessageRetrieved`);
+            if (event) {
                 try {
-                    JSON.parse(val);
-                    return val;
+                    const parsed = (event.parsedJson as any) ?? {};
+                    return JSON.stringify({ sender: parsed.sender ?? parsed.dao_wallet ?? "", message: parsed.message ?? "", id: parsed.id ?? id, address: parsed.sender ?? parsed.dao_wallet ?? "" });
                 } catch (e) {
-                    // If not valid JSON, wrap it
-                    return JSON.stringify({ raw: val });
+                    return JSON.stringify({ rawEvent: event });
                 }
             }
-            try {
-                const stringified = JSON.stringify(val);
-                return stringified;
-            } catch (e) {
-                // Fallback for circular or unparseable values
-                return JSON.stringify({ raw: String(val) });
+
+            const val = extractDevInspectValue(result);
+            if (!val && val !== 0) return "{}";
+            if (typeof val === 'string') {
+                try { JSON.parse(val); return val; } catch (e) { return JSON.stringify({ raw: val }); }
             }
+            try { return JSON.stringify(val); } catch (e) { return JSON.stringify({ raw: String(val) }); }
         } catch (e) {
             console.error(e);
             return "{}";
@@ -705,35 +724,54 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 transactionBlock: tx,
                 sender: currentWalletAddress,
             });
+
+            // Prefer event payload if Move emitted a ReplyRetrieved event
+            const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::ReplyRetrieved`);
+            if (event) {
+                try {
+                    const parsed = (event.parsedJson as any) ?? {};
+                    return JSON.stringify({ message: parsed.message ?? "", ideas_id: parsed.ideas_id ?? parsed.dao_id ?? 0, id: parsed.id ?? id });
+                } catch (e) {
+                    return JSON.stringify({ rawEvent: event });
+                }
+            }
+
             const val = extractDevInspectValue(result);
             if (!val && val !== 0) return "{}";
             if (typeof val === 'string') {
-                // Validate it's parseable JSON
-                try {
-                    JSON.parse(val);
-                    return val;
-                } catch (e) {
-                    // If not valid JSON, wrap it
-                    return JSON.stringify({ raw: val });
-                }
+                try { JSON.parse(val); return val; } catch (e) { return JSON.stringify({ raw: val }); }
             }
-            try {
-                const stringified = JSON.stringify(val);
-                return stringified;
-            } catch (e) {
-                // Fallback for circular or unparseable values
-                return JSON.stringify({ raw: String(val) });
-            }
+            try { return JSON.stringify(val); } catch (e) { return JSON.stringify({ raw: String(val) }); }
         } catch (e) {
             console.error(e);
             return "{}";
+        }
+    }
+
+    async function getGoalIdFromIdeasUri(uri: string) {
+        if (!client || !currentWalletAddress) return 0;
+        const tx = new Transaction();
+        tx.moveCall({
+            target: `${PACKAGE_ID}::${MODULE}::get_goal_id_from_ideas_uri`,
+            arguments: [tx.object(STATE_OBJECT), tx.pure.string(uri)],
+        });
+        try {
+            const result = await client.devInspectTransactionBlock({
+                transactionBlock: tx,
+                sender: currentWalletAddress,
+            });
+            const val = extractDevInspectValue(result);
+            return Number(val ?? 0);
+        } catch (e) {
+            console.error(e);
+            return 0;
         }
     }
     async function getMessageIds() {
         if (!client || !currentWalletAddress) return 0;
         const tx = new Transaction();
         tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::_message_ids`,
+            target: `${PACKAGE_ID}::${MODULE}::message_ids`,
             arguments: [tx.object(STATE_OBJECT)],
         });
         try {
