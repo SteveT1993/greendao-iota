@@ -1,8 +1,9 @@
 import { Button } from "@heathmont/moon-core-tw";
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/router';
 import SlideShow from "../../../../../components/components/Slideshow";
-import useContract from "../../../../../services/useContract";
+import { useIOTA } from '../../../../../contexts/IOTAContext'
 import { ControlsChevronLeft } from "@heathmont/moon-icons-tw";
 import {useSnackbar} from 'notistack';
 import UseFormTextArea from "../../../../../components/components/UseFormTextArea";
@@ -13,6 +14,7 @@ import Loader from '../../../../../components/Loader/Loader'
 import styles from "../../../daos.module.css";
 import Skeleton from "@mui/material/Skeleton";
 import CommentBox from "../../../../../components/components/Card/Comment";
+import { Transaction } from "@iota/iota-sdk/transactions";
 
 let IdeasEnd = "";
 let IdeasWaiting = false;
@@ -27,7 +29,7 @@ export default function GrantIdeas() {
 	const [IdeasURI, setIdeasURI] = useState({ ideasId: "", Title: "", Description: "",Referenda:0, wallet: "", logo: "", End_Date: "", voted: 0,delegAmount:0,delegDated:"", isVoted: true, isOwner: true, allfiles: [] });
 	const [DonatemodalShow, setDonatemodalShow] = useState(false);
 	const [AccountAddress, setAccountAddress] = useState("");
-	const { contract, signerAddress, sendTransaction,saveReadMessage } = useContract();
+	const { contract, currentWalletAddress: signerAddress, sendTransaction, getIdeasUri, getGoalIdFromIdeasUri, getGoalUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyIDs, getAllReplies, getMessageIds, getReplyIds } = useIOTA();
 	const [Comment, CommentInput, setComment] = UseFormTextArea({
 		defaultValue: "",
 		placeholder: "Your comment",
@@ -50,9 +52,11 @@ export default function GrantIdeas() {
 		}]
 	}]);
 	
+	const router = useRouter();
 	let m;
 	let id = ""; //Ideas id from url
-	let Goalid = ""; //Goal id
+	let goalIdFromUrl = ""; //Goal id from url
+	let daoIdFromUrl = ""; //Dao id from url
 
 
 	function LeftDate(datetext, int= false) {
@@ -111,32 +115,44 @@ export default function GrantIdeas() {
 	});
 
 	if (isServer()) return null;
-	const regex = /\[(.*)\]/g;
-	const str = decodeURIComponent(window.location.search);
+	
+	// Modern route: /daos/[daoId]/goals/[goalId]/ideas/[ideaId]
+	if (router.query.daoId && router.query.goalId && router.query.ideaId) {
+		daoIdFromUrl = router.query.daoId;
+		goalIdFromUrl = router.query.goalId;
+		id = router.query.ideaId;
 
-	while ((m = regex.exec(str)) !== null) {
-		// This is necessary to avoid infinite loops with zero-width matches
-
-		if (m.index === regex.lastIndex) {
-			regex.lastIndex++;
-		}
-		id = m[1];
 	}
 
 	async function fetchContractData() {
 		running = true;
 		try {
-			if (contract && id) {
-				setIdeasId(id); //setting Ideas id
-				id = Number(id);
-
-				const ideaURI = await contract.ideas_uri(Number(id)); //Getting ideas uri
-				const object = JSON.parse(ideaURI); //Getting ideas uri
-				Goalid = await contract.get_goal_id_from_ideas_uri(ideaURI);
-				setGoal_id(Goalid);
-				const goalURI = JSON.parse(await contract.goal_uri(Number(Goalid))); //Getting goal URI
+			if (contract ) {
+			setIdeasId(id);
+			const ideaURI = await getIdeasUri(Number(id)); //Getting ideas uri
+			if (ideaURI == "") {running =false; return;}
+			const object = JSON.parse(ideaURI); //Getting ideas uri
+			
+			// Use goalId from modern URL or fetch from chain
+			let Goalid = goalIdFromUrl ? Number(goalIdFromUrl) : await getGoalIdFromIdeasUri(ideaURI);
+			if (isNaN(Goalid) || Goalid < 0) {
+				console.error("Invalid Goalid:", Goalid);
+				running = false;
+				return;
+			}
+			setGoal_id(Goalid);
+			
+			
+			const goalURIStr = await getGoalUri(Number(Goalid)); //Getting goal URI
+			if (!goalURIStr) {
+				console.error("Empty goalURIStr for Goalid:", Goalid);
+				running = false;
+				return;
+			}
+			const goalURI = JSON.parse(goalURIStr);
 				let isvoted = false;
-				const Allvotes = await contract.get_ideas_votes_from_goal(Number(Goalid), Number(id)); //Getting all votes
+				const Allvotes = await getIdeasVotesFromGoal(Number(Goalid), Number(id)); //Getting all votes
+				
 				for (let i = 0; i < Allvotes.length; i++) {
 					const element = Allvotes[i];
 					if (element === signerAddress) isvoted = true;
@@ -150,7 +166,7 @@ export default function GrantIdeas() {
 					logo: object.properties.logo.description.url,
 					End_Date: goalURI.properties.End_Date?.description,
 					voted: Object.keys(Allvotes).length,
-					donation: Number((await contract._ideas_uris(Number(id))).donation) / 1e9,
+					donation: await getIdeasDonation(Number(id)),
 					isVoted: isvoted,
 					isOwner: object.properties.wallet.description.toString().toLocaleLowerCase() === signerAddress.toString().toLocaleLowerCase() ? true : false,
 					allfiles: object.properties.allFiles
@@ -159,35 +175,51 @@ export default function GrantIdeas() {
 				setimageList(object.properties.allFiles);
 
 				// Comments and Replies
-				const totalComments = await contract.getMsgIDs(Number(id)) //Getting total comments (Number) of this idea
+				const totalComments = await getMsgIDs(Number(id)) //Getting total comments (Number) of this idea
 				// const arr = []
 				for (let i = 0; i < Object.keys(totalComments).length; i++) {
 					//total comments number Iteration
 					const commentId = Number(totalComments[i]);
-					let commentInfo = await contract.all_messages(commentId);
-					const object = JSON.parse(commentInfo.message)
-					let newComment = {
-						address: object.address,
-						message: object.message,
-						date: object.date,
-						id: object.id,
-						replies: []
-					};
-
-					const totalReplies = await contract.getReplyIDs(Number(commentId)) //Getting total replies (Number) of this comment
-					for (let i = 0; i < Object.keys(totalReplies).length; i++) {
-						const replyId = Number(totalReplies[i]);
-						let replyInfo = await contract.all_replies(replyId);
-						const object = JSON.parse(replyInfo.message)
-						let newReply = {
-							id: object.id,
-							message: object.message,
-							address: object.address,
-							date: object.date
-						};
-						newComment.replies.push(newReply)
+					if (isNaN(commentId) || commentId < 0) {
+						console.error("Invalid commentId:", commentId);
+						continue;
 					}
-					CommentsList.push(newComment);
+					let commentInfo = await getAllMessages(commentId);
+					try {
+						const object = JSON.parse(commentInfo)
+						let newComment = {
+							address: object.address,
+							message: object.message,
+							date: object.date,
+							id: object.id,
+							replies: []
+						};
+
+						const totalReplies = await getReplyIDs(Number(commentId)) //Getting total replies (Number) of this comment
+						for (let i = 0; i < Object.keys(totalReplies).length; i++) {
+							const replyId = Number(totalReplies[i]);
+							if (isNaN(replyId) || replyId < 0) {
+								console.error("Invalid replyId:", replyId);
+								continue;
+							}
+							let replyInfo = await getAllReplies(replyId);
+							try {
+								const object = JSON.parse(replyInfo)
+								let newReply = {
+									id: object.id,
+									message: object.message,
+									address: object.address,
+									date: object.date
+								};
+								newComment.replies.push(newReply)
+							} catch (parseErr) {
+								console.error("Failed to parse replyInfo:", replyInfo, parseErr);
+							}
+						}
+						CommentsList.push(newComment);
+					} catch (parseErr) {
+						console.error("Failed to parse commentInfo:", commentInfo, parseErr);
+					}
 				}
 				removeElementFromArrayBYID(emptydata, 0, setemptydata)
 				if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
@@ -214,7 +246,6 @@ export default function GrantIdeas() {
 		if (entry.isIntersecting) {
 			let elm = entry.target;
 			let id = Number( elm.dataset.id);
-			await saveReadMessage(id,ideaId,"message")
 
 		  return
 		}
@@ -230,7 +261,6 @@ export default function GrantIdeas() {
 			let elm = entry.target;
 			let id = Number( elm.dataset.id);
 
-			await saveReadMessage(id,ideaId,"reply")
 
 
 		  return
@@ -268,7 +298,8 @@ export default function GrantIdeas() {
 	async function VoteIdees() {
 		
 		try {
-			await sendTransaction(await window.contract.populateTransaction.create_goal_ideas_vote(Number(Goalid), Number(id), signerAddress));
+			const tx = new Transaction();
+			await sendTransaction(tx, 'create_goal_ideas_vote', [tx.pure.u64(Number(Goal_id)), tx.pure.u64(Number(id)), tx.pure.string(signerAddress)]);
 		} catch (error) {
 			console.error(error);
 			return;
@@ -304,9 +335,9 @@ export default function GrantIdeas() {
 	async function PostComment(e) {
 		e.preventDefault();
 
-		let messLatestId = Number(await contract._message_ids());
+		let messLatestId = await getMessageIds();
 		let newComment = {
-			address: window?.ethereum?.selectedAddress?.toLocaleLowerCase().toString(),
+			address: signerAddress.toLowerCase(),
 			message: Comment,
 			date: new Date().toISOString(),
 			id: messLatestId
@@ -318,20 +349,22 @@ export default function GrantIdeas() {
 		removeElementFromArrayBYID(emptydata, 0, setemptydata)
 	}
 	async function saveMessage(newComment) {
-		await sendTransaction(await window.contract.populateTransaction.sendMsg(Number(ideaId), JSON.stringify(newComment),window?.ethereum?.selectedAddress?.toLocaleLowerCase()));
+		const tx = new Transaction();
+		await sendTransaction(tx, 'sendMsg', [tx.pure.u64(Number(ideaId)), tx.pure.string(JSON.stringify(newComment)), tx.pure.address(signerAddress)]);
 		removeElementFromArrayBYID(emptydata, 0, setemptydata)
 		console.log("Saved Messages")
 	}
 	async function sendReply(replyText, MessageId, MessageIndex) {
-		let replyLatestId = Number(await contract._reply_ids());
+		let replyLatestId = await getReplyIds();
 		let newReply = {
 			id: replyLatestId,
 			message: replyText,
-			address: window?.ethereum?.selectedAddress?.toLocaleLowerCase().toString(),
+			address: signerAddress.toLowerCase(),
 			date: new Date().toISOString()
 		};
 		CommentsList[MessageIndex].replies.push(newReply);
-		await sendTransaction(await window.contract.populateTransaction.sendReply(Number(MessageId), JSON.stringify(newReply),Number(ideaId),window?.ethereum?.selectedAddress?.toLocaleLowerCase()));
+		const tx = new Transaction();
+		await sendTransaction(tx, 'sendReply', [tx.pure.u64(Number(MessageId)), tx.pure.string(JSON.stringify(newReply)), tx.pure.u64(Number(ideaId)), tx.pure.address(signerAddress)]);
 		removeElementFromArrayBYID(emptydata, 0, setemptydata)
 		console.log("Saved Reply")
 	}

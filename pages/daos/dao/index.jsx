@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from 'react-dom/client';
+import { useRouter } from 'next/router';
 
 
 import Head from "next/head"
@@ -20,8 +21,8 @@ export default function DAO() {
 	const [list, setList] = useState([])
 	const [DaoURI, setDaoURI] = useState({ Title: "", Description: "", SubsPrice: 0, Start_Date: "", End_Date: "", logo: "", wallet: "", typeimg: "", allFiles: [], isOwner: false })
 	const [daoId, setDaoID] = useState(-1)
-	const { contract, signerAddress } = useContract()
-	const { daos, sleep, getGoalsForDao } = useIOTA()
+	const { daos, sleep, currentWalletAddress, getGoalsForDao, getUserBadge } = useIOTA()
+	const router = useRouter();
 	const [JoinmodalShow, setJoinmodalShow] = useState(false);
 	const [isJoined, setIsJoined] = useState(true)
 
@@ -42,13 +43,19 @@ export default function DAO() {
 	}, [list]);
 
 	if (isServer()) return null
-	const str = decodeURIComponent(window.location.search)
-
-	while ((m = regex.exec(str)) !== null) {
-		if (m.index === regex.lastIndex) {
-			regex.lastIndex++
+	
+	// Modern route: /daos/[daoId]
+	if (router.query.daoId) {
+		id = router.query.daoId;
+	} else {
+		// Legacy route: /daos/dao?[daoId]
+		const str = decodeURIComponent(window.location.search)
+		while ((m = regex.exec(str)) !== null) {
+			if (m.index === regex.lastIndex) {
+				regex.lastIndex++
+			}
+			id = m[1]
 		}
-		id = m[1]
 	}
 	function calculateTimeLeft() {
 		//Calculate time left
@@ -83,7 +90,7 @@ export default function DAO() {
 						{LeftDate(listItem.End_Date, listItem.status)}
 					</div>
 
-					<a href={`/daos/dao/goal?[${listItem.goalId}]`}>
+					<a href={`/daos/${daoId}/goals/${listItem.goalId}`}>
 						<Button iconLeft>
 							<ControlsChevronRight />
 							Go to Goal
@@ -102,6 +109,7 @@ export default function DAO() {
 			if (daos && daos.length > 0 && id) {
 				setDaoID(Number(id))
 
+				let isJoinedTemp = false;
 				const dao = daos.find(d => {
 					// Match using the new numeric dao_id field when available, otherwise fall back to uid string
 					const numeric = d.dao_id ?? (d.id && d.id.id) ?? d.id;
@@ -119,11 +127,21 @@ export default function DAO() {
 						typeimg: daoURI.typeimg,
 						allFiles: daoURI.allFiles,
 						SubsPrice: daoURI.subs_price,
-						isOwner: dao.dao_wallet === signerAddress ? true : false
+						isOwner: dao.dao_wallet.toString().toLocaleLowerCase() === currentWalletAddress.toString().toLocaleLowerCase() ? true : false
 					};
 					setDaoURI(daoURIShort);
-					// For now, assume not joined
-					setIsJoined(false);
+					// Determine joined status for current wallet
+					try {
+						if (currentWalletAddress) {
+							const badge = await getUserBadge(currentWalletAddress.toString());
+							isJoinedTemp =(!!(badge && badge.joined));
+						} else {
+							isJoinedTemp = (false);
+						}
+					} catch (e) {
+						console.warn('Failed to determine join status', e);
+						isJoinedTemp = (false);
+					}
 
 					// Fetch goals for this DAO
 					const goals = await getGoalsForDao(Number(id));
@@ -137,11 +155,9 @@ export default function DAO() {
 					}));
 					setList(mappedGoals);
 
-					document.querySelector("#dao-container").innerHTML = dao.template;
-
-					document.querySelector("#dao-container").innerHTML = dao.template;
-
-					document.querySelector("#dao-container").innerHTML = dao.template;
+					if (document.querySelector("#dao-container")) {
+						document.querySelector("#dao-container").innerHTML = dao.template;
+					}
 					if (document.querySelector(".btn-back") != null) {
 						document.querySelector(".btn-back").addEventListener('click', () => {
 							window.history.back();
@@ -151,7 +167,7 @@ export default function DAO() {
 					let create_goal_block = document.querySelector(".create-goal-block");
 					if (create_goal_block != null) {
 						document.querySelector(".create-goal-block").addEventListener('click', () => {
-							window.location.href = `/CreateGoal?[${id}]`;
+							window.location.href = `/CreateGoal?daoId=${id}`;
 						});
 					}
 
@@ -159,16 +175,18 @@ export default function DAO() {
 						join_community_block.addEventListener('click', JoinCommunity);
 					};
 
-					if (daoURIShort.isOwner || isJoined) {
+
+					if (daoURIShort.isOwner || isJoinedTemp) {
 						if (join_community_block != null) {
 							join_community_block.style.display = "none";
 						}
 					}
-					if (!isJoined) {
+					if ( !daoURIShort.isOwner && !isJoinedTemp ) {
 						if (create_goal_block != null) {
 							create_goal_block.style.display = "none";
 						}
 					}
+					setIsJoined(isJoinedTemp);
 
 					if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 				}
@@ -215,6 +233,7 @@ export default function DAO() {
 			</div>
 
 
+			
 			<JoinDAO
 				Amount={DaoURI.SubsPrice}
 				show={JoinmodalShow}

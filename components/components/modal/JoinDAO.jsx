@@ -71,8 +71,8 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
         // Build and send an IOTA Move transaction calling join_community
         try {
             const tx = new Transaction();
-            const joinAddress = (currentWalletAddress || window?.ethereum?.selectedAddress)?.toString().toLocaleLowerCase();
-            await sendTransaction(tx, "join_community", [Number(dao_id), joinAddress]);
+            const joinAddress = (currentWalletAddress)?.toString().toLocaleLowerCase();
+            await sendTransaction(tx, "join_community", [tx.pure.u64(Number(dao_id)), tx.pure.string(joinAddress)]);
 
             await sleep(2000);
 

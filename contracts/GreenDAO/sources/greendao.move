@@ -1,16 +1,12 @@
-	/// Global DAO State resource
-		// If global state is needed, define here. For now, use State as before.
-module 0x0::dao {
-	
-	use std::string;
-	use iota::table::{Self, Table};
-	use iota::object;
-	use iota::tx_context;
-	use iota::event;
+	module 0x0::dao {
+
+		use std::string;
+		use iota::table;
+		use iota::event;
 
 	/// DAO Structs
 	public struct DaoURI has key, store {
-		id: UID,
+		id: object::UID,
 		dao_id: u64,
 		dao_wallet: string::String,
 		dao_uri: string::String,
@@ -19,14 +15,14 @@ module 0x0::dao {
 	}
 
 	public struct GoalURI has key, store {
-		id: UID,
+		id: object::UID,
 		goal_id: u64,
 		dao_id: u64,
 		goal_uri: string::String
 	}
 
 	public struct IdeasURI has key, store {
-		id: UID,
+		id: object::UID,
 		ideas_id: u64,
 		goal_id: u64,
 		ideas_uri: string::String,
@@ -34,7 +30,7 @@ module 0x0::dao {
 	}
 
 	public struct Donation has key, store {
-		id: UID,
+		id: object::UID,
 		donation_id: u64,
 		ideas_id: u64,
 		wallet: string::String,
@@ -42,14 +38,14 @@ module 0x0::dao {
 	}
 
 	public struct Join has store {
-		id: UID,
+		id: object::UID,
 		join_id: u64,
 		dao_id: u64,
 		wallet: string::String
 	}
 
 	public struct UserBadge has key, store {
-		id: UID,
+		id: object::UID,
 		wallet: string::String,
 		dao: bool,
 		joined: bool,
@@ -59,6 +55,32 @@ module 0x0::dao {
 		donation: bool,
 		comment: bool,
 		reply: bool
+	}
+
+	public struct Vote has store {
+		id: object::UID,
+		vote_id: u64,
+		goal_id: u64,
+		ideas_id: u64,
+		voter: string::String
+	}
+
+	// Align Message with Solidity: include sender (no date)
+	public struct Message has store {
+		id: object::UID,
+		message_id: u64,
+		ideas_id: u64,
+		message: string::String,
+		sender: string::String
+	}
+
+	// Align Reply with Solidity: include ideas_id, no address/date
+	public struct Reply has store {
+		id: object::UID,
+		reply_id: u64,
+		message_id: u64,
+		ideas_id: u64,
+		message: string::String
 	}
 
 	/// Events
@@ -140,12 +162,18 @@ module 0x0::dao {
 		ideas_counter: u64,
 		join_counter: u64,
 		donation_counter: u64,
-		daos: Table<u64, DaoURI>,
-		goals: Table<u64, GoalURI>,
-		ideas: Table<u64, IdeasURI>,
-		joins: Table<u64, Join>,
-		donations: Table<u64, Donation>,
-		user_badges: Table<string::String, UserBadge>
+		vote_counter: u64,
+		message_counter: u64,
+		reply_counter: u64,
+		daos: table::Table<u64, DaoURI>,
+		goals: table::Table<u64, GoalURI>,
+		ideas: table::Table<u64, IdeasURI>,
+		joins: table::Table<u64, Join>,
+		donations: table::Table<u64, Donation>,
+		votes: table::Table<u64, Vote>,
+		messages: table::Table<u64, Message>,
+		replies: table::Table<u64, Reply>,
+		user_badges: table::Table<string::String, UserBadge>
 	}
 
 	/// Initialization
@@ -155,6 +183,9 @@ module 0x0::dao {
 		let ideas = table::new(ctx);
 		let joins = table::new(ctx);
 		let donations = table::new(ctx);
+		let votes = table::new(ctx);
+		let messages = table::new(ctx);
+		let replies = table::new(ctx);
 		let user_badges = table::new(ctx);
 
 
@@ -165,18 +196,24 @@ module 0x0::dao {
 			ideas_counter: 0,
 			join_counter: 0,
 			donation_counter: 0,
+			vote_counter: 0,
+			message_counter: 0,
+			reply_counter: 0,
 			daos: daos,
 			goals: goals,
 			ideas: ideas,
 			joins: joins,
 			donations: donations,
+			votes: votes,
+			messages: messages,
+			replies: replies,
 			user_badges: user_badges
 		};
 		transfer::share_object(state);
 	}
 
 	/// Create DAO
-	public entry fun create_dao(
+	public fun create_dao(
 		state: &mut State,
 		dao_wallet: vector<u8>,
 		dao_uri: vector<u8>,
@@ -214,14 +251,14 @@ module 0x0::dao {
 				comment: false,
 				reply: false
 			};
-			table::add(&mut state.user_badges, dao_wallet_str, badge);
-	};
-	state.dao_counter = state.dao_counter + 1;
+				table::add(&mut state.user_badges, dao_wallet_str, badge);
+			};
+		state.dao_counter = state.dao_counter + 1;
 		state.dao_counter
 	}
 
 	/// Create Goal
-	public entry fun create_goal(
+	public fun create_goal(
 		state: &mut State,
 		goal_uri: vector<u8>,
 		dao_id: u64,
@@ -256,13 +293,13 @@ module 0x0::dao {
 				reply: false
 			};
 			table::add(&mut state.user_badges, wallet_str, badge);
-	};
+		};
 	state.goal_counter = state.goal_counter + 1;
 		state.goal_counter
 	}
 
 	/// Create Ideas
-	public entry fun create_ideas(
+	public fun create_ideas(
 		state: &mut State,
 		ideas_uri: vector<u8>,
 		goal_id: u64,
@@ -298,13 +335,13 @@ module 0x0::dao {
 				reply: false
 			};
 			table::add(&mut state.user_badges, wallet_str, badge);
-	};
+		};
 	state.ideas_counter = state.ideas_counter + 1;
 		state.ideas_counter
 	}
 
 	/// Add Donation
-	public entry fun add_donation(
+	public fun add_donation(
 		state: &mut State,
 		ideas_id: u64,
 		donation: u64,
@@ -339,12 +376,12 @@ module 0x0::dao {
 				reply: false
 			};
 			table::add(&mut state.user_badges, donator_str, badge);
-	};
+		};
 	state.donation_counter = state.donation_counter + 1;
 	}
 
 	/// Join Community
-	public entry fun join_community(
+	public fun join_community(
 		state: &mut State,
 		dao_id: u64,
 		person: vector<u8>,
@@ -377,12 +414,135 @@ module 0x0::dao {
 				reply: false
 			};
 			table::add(&mut state.user_badges, person_str, badge);
-	};
+		};
 	state.join_counter = state.join_counter + 1;
 	}
 
-	/// Get DAO by id
-	public entry fun get_dao(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	/// Create Goal Ideas Vote
+	public fun create_goal_ideas_vote(
+		state: &mut State,
+		goal_id: u64,
+		ideas_id: u64,
+		voter: vector<u8>,
+		ctx: &mut tx_context::TxContext
+	) {
+		let id = state.vote_counter;
+		let voter_str = string::utf8(voter);
+		let vote = Vote {
+			id: iota::object::new(ctx),
+			vote_id: id,
+			goal_id,
+			ideas_id,
+			voter: voter_str
+		};
+		table::add(&mut state.votes, id, vote);
+		// Update badge
+		if (table::contains(&state.user_badges, voter_str)) {
+			let b = table::borrow_mut(&mut state.user_badges, voter_str);
+			b.vote = true;
+		} else {
+			let badge = UserBadge {
+				id: iota::object::new(ctx),
+				wallet: voter_str,
+				dao: false,
+				joined: false,
+				goal: false,
+				ideas: false,
+				vote: true,
+				donation: false,
+				comment: false,
+				reply: false
+			};
+			table::add(&mut state.user_badges, voter_str, badge);
+		};
+		state.vote_counter = state.vote_counter + 1;
+	}
+
+	/// Send Message (align with Solidity: sender, no date)
+	public fun sendMsg(
+		state: &mut State,
+		ideas_id: u64,
+		message: vector<u8>,
+		sender: vector<u8>,
+		ctx: &mut tx_context::TxContext
+	): u64 {
+		let id = state.message_counter;
+		let message_str = string::utf8(message);
+		let sender_str = string::utf8(sender);
+		let msg = Message {
+			id: iota::object::new(ctx),
+			message_id: id,
+			ideas_id,
+			message: message_str,
+			sender: sender_str
+		};
+		table::add(&mut state.messages, id, msg);
+		// Update badge
+		if (table::contains(&state.user_badges, sender_str)) {
+			let b = table::borrow_mut(&mut state.user_badges, sender_str);
+			b.comment = true;
+		} else {
+			let badge = UserBadge {
+				id: iota::object::new(ctx),
+				wallet: sender_str,
+				dao: false,
+				joined: false,
+				goal: false,
+				ideas: false,
+				vote: false,
+				donation: false,
+				comment: true,
+				reply: false
+			};
+			table::add(&mut state.user_badges, sender_str, badge);
+		};
+		state.message_counter = state.message_counter + 1;
+		id
+	}
+
+	/// Send Reply (align with Solidity: wallet and ideas_id)
+	public fun sendReply(
+		state: &mut State,
+		message_id: u64,
+		message: vector<u8>,
+		wallet: vector<u8>,
+		ideas_id: u64,
+		ctx: &mut tx_context::TxContext
+	): u64 {
+		let id = state.reply_counter;
+		let message_str = string::utf8(message);
+		let wallet_str = string::utf8(wallet);
+		let reply = Reply {
+			id: iota::object::new(ctx),
+			reply_id: id,
+			message_id,
+			ideas_id,
+			message: message_str
+		};
+		table::add(&mut state.replies, id, reply);
+		// Update badge
+		if (table::contains(&state.user_badges, wallet_str)) {
+			let b = table::borrow_mut(&mut state.user_badges, wallet_str);
+			b.reply = true;
+		} else {
+			let badge = UserBadge {
+				id: iota::object::new(ctx),
+				wallet: wallet_str,
+				dao: false,
+				joined: false,
+				goal: false,
+				ideas: false,
+				vote: false,
+				donation: false,
+				comment: false,
+				reply: true
+			};
+		table::add(&mut state.user_badges, wallet_str, badge);
+	};
+	state.reply_counter = state.reply_counter + 1;
+		id
+	}	/// Get DAO by id
+	public fun get_dao(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
 		let dao = table::borrow(&state.daos, id);
 		event::emit(DaoRetrieved {
 			id,
@@ -394,7 +554,7 @@ module 0x0::dao {
 	}
 
 	/// Get Goal by id
-	public entry fun get_goal(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_goal(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
 		let goal = table::borrow(&state.goals, id);
 		event::emit(GoalRetrieved {
 			id,
@@ -404,7 +564,7 @@ module 0x0::dao {
 	}
 
 	/// Get Ideas by id
-	public entry fun get_ideas(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_ideas(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
 		let ideas = table::borrow(&state.ideas, id);
 		event::emit(IdeasRetrieved {
 			id,
@@ -415,7 +575,7 @@ module 0x0::dao {
 	}
 
 	/// Get Donation by id
-	public entry fun get_donation(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_donation(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
 		let d = table::borrow(&state.donations, id);
 		event::emit(DonationRetrieved {
 			id,
@@ -426,7 +586,7 @@ module 0x0::dao {
 	}
 
 	/// Get Join by id
-	public entry fun get_join(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_join(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
 		let j = table::borrow(&state.joins, id);
 		event::emit(JoinRetrieved {
 			id,
@@ -436,7 +596,7 @@ module 0x0::dao {
 	}
 
 	/// Update template for a DAO
-	public entry fun update_template(
+	public fun update_template(
 		state: &mut State,
 		id: u64,
 		template: vector<u8>,
@@ -456,7 +616,7 @@ module 0x0::dao {
 	}
 
 	/// Get UserBadge by wallet string
-	public entry fun get_user_badge(state: &State, wallet: vector<u8>, ctx: &mut tx_context::TxContext) {
+	public fun get_user_badge(state: &State, wallet: vector<u8>, ctx: &mut tx_context::TxContext) {
 		let wallet_str = string::utf8(wallet);
 		let b = table::borrow(&state.user_badges, wallet_str);
 		event::emit(UserBadgeRetrieved {
@@ -473,7 +633,7 @@ module 0x0::dao {
 	}
 
 	/// View all DAOs (returns vector of DaoInfo)
-	public entry fun view_all_daos(state: &State, ctx: &mut tx_context::TxContext) {
+	public fun view_all_daos(state: &State, ctx: &mut tx_context::TxContext) {
 		let mut daos = vector::empty<DaoRetrieved>();
 		let mut i = 0;
 		while (i < state.dao_counter) {
@@ -493,7 +653,7 @@ module 0x0::dao {
 	}
 
 	/// View goals for a DAO
-	public entry fun view_goals_for_dao(state: &State, dao_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_goals_for_dao(state: &State, dao_id: u64, ctx: &mut tx_context::TxContext) {
 		let mut goals = vector::empty<GoalRetrieved>();
 		let mut i = 0;
 		while (i < state.goal_counter) {
@@ -506,14 +666,14 @@ module 0x0::dao {
 						goal_uri: goal.goal_uri
 					});
 				};
-			};
-			i = i + 1;
-		};
-		event::emit(GoalsForDaoRetrieved { dao_id, goals });
+			  };
+			  i = i + 1;
+		  };
+		  event::emit(GoalsForDaoRetrieved { dao_id, goals });
 	}
 
 	/// View ideas for a goal
-	public entry fun view_ideas_for_goal(state: &State, goal_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_ideas_for_goal(state: &State, goal_id: u64, ctx: &mut tx_context::TxContext) {
 		let mut ideas = vector::empty<IdeasRetrieved>();
 		let mut i = 0;
 		while (i < state.ideas_counter) {
@@ -527,14 +687,14 @@ module 0x0::dao {
 						donation: idea.donation
 					});
 				};
-			};
-			i = i + 1;
-		};
-		event::emit(IdeasForGoalRetrieved { goal_id, ideas });
+			  };
+			  i = i + 1;
+		  };
+		  event::emit(IdeasForGoalRetrieved { goal_id, ideas });
 	}
 
 	/// View donations for an idea
-	public entry fun view_donations_for_idea(state: &State, ideas_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_donations_for_idea(state: &State, ideas_id: u64, ctx: &mut tx_context::TxContext) {
 		let mut donations = vector::empty<DonationRetrieved>();
 		let mut i = 0;
 		while (i < state.donation_counter) {
@@ -548,29 +708,169 @@ module 0x0::dao {
 						donation: d.donation
 					});
 				};
-			};
-			i = i + 1;
-		};
-		event::emit(DonationsForIdeaRetrieved { ideas_id, donations });
+			  };
+			  i = i + 1;
+		  };
+		  event::emit(DonationsForIdeaRetrieved { ideas_id, donations });
 	}
 
-	/// View joins for a DAO
-	public entry fun view_joins_for_dao(state: &State, dao_id: u64, ctx: &mut tx_context::TxContext) {
-		let mut joins = vector::empty<JoinRetrieved>();
+	/// View functions
+	public fun goal_uri(state: &State, id: u64): string::String {
+		let goal = table::borrow(&state.goals, id);
+		goal.goal_uri
+	}
+
+	public fun ideas_uri(state: &State, id: u64): string::String {
+		let ideas = table::borrow(&state.ideas, id);
+		ideas.ideas_uri
+	}
+
+	  public fun get_all_ideas_by_goal_id(state: &State, goal_id: u64): vector<string::String> {
+		  let mut uris = vector::empty<string::String>();
+		  let mut i = 0;
+		  while (i < state.ideas_counter) {
+			  if (table::contains(&state.ideas, i)) {
+				  let idea = table::borrow(&state.ideas, i);
+				  if (idea.goal_id == goal_id) {
+					  vector::push_back(&mut uris, idea.ideas_uri);
+				  };
+			  };
+			  i = i + 1;
+		  };
+		  uris
+	  }
+
+	public fun get_ideas_id_by_ideas_uri(state: &State, uri: string::String): u64 {
+			  let mut i = 0;
+			  while (i < state.ideas_counter) {
+				  if (table::contains(&state.ideas, i)) {
+					  let idea = table::borrow(&state.ideas, i);
+					  if (idea.ideas_uri == uri) {
+						  return i
+					  };
+				  };
+				  i = i + 1;
+			  };
+			  0
+		}
+
+	public fun get_goal_id_from_ideas_uri(state: &State, uri: string::String): u64 {
 		let mut i = 0;
-		while (i < state.join_counter) {
-			if (table::contains(&state.joins, i)) {
-				let j = table::borrow(&state.joins, i);
-				if (j.dao_id == dao_id) {
-					vector::push_back(&mut joins, JoinRetrieved {
-						id: i,
-						dao_id: j.dao_id,
-						wallet: j.wallet
-					});
+		while (i < state.ideas_counter) {
+			if (table::contains(&state.ideas, i)) {
+				let idea = table::borrow(&state.ideas, i);
+				if (idea.ideas_uri == uri) {
+					return idea.goal_id
 				};
 			};
 			i = i + 1;
 		};
-		event::emit(JoinsForDaoRetrieved { dao_id, joins });
+		0
 	}
+
+	public fun get_ideas_donation(state: &State, id: u64): u64 {
+		let ideas = table::borrow(&state.ideas, id);
+		ideas.donation
+	}
+
+	public fun get_ideas_votes_from_goal(state: &State, goal_id: u64, ideas_id: u64): vector<string::String> {
+		let mut voters = vector::empty<string::String>();
+		let mut i = 0;
+		  while (i < state.vote_counter) {
+			  if (table::contains(&state.votes, i)) {
+				  let vote = table::borrow(&state.votes, i);
+				  if (vote.goal_id == goal_id && vote.ideas_id == ideas_id) {
+					  vector::push_back(&mut voters, vote.voter);
+				  };
+			  };
+			  i = i + 1;
+		  };
+		  voters
+	  }
+
+	public fun getMsgIDs(state: &State, ideas_id: u64): vector<u64> {
+		let mut ids = vector::empty<u64>();
+		let mut i = 0;
+		  while (i < state.message_counter) {
+			  if (table::contains(&state.messages, i)) {
+				  let msg = table::borrow(&state.messages, i);
+				  if (msg.ideas_id == ideas_id) {
+					  vector::push_back(&mut ids, i);
+				  };
+			  };
+			  i = i + 1;
+		  };
+		  ids
+	  }
+
+	public fun all_messages(state: &State, id: u64): string::String {
+		let msg = table::borrow(&state.messages, id);
+		// Build JSON: {"sender":"...","message":"...","id":...}
+		let mut json = string::utf8(b"{\"sender\":\"");
+		// append sender
+		string::append(&mut json, string::utf8(*string::as_bytes(&msg.sender)));
+		string::append(&mut json, string::utf8(b"\",\"message\":\""));
+		// append message
+		string::append(&mut json, string::utf8(*string::as_bytes(&msg.message)));
+		string::append(&mut json, string::utf8(b"\",\"id\":"));
+		let id_str = u64_to_string(id);
+		string::append(&mut json, id_str);
+		string::append(&mut json, string::utf8(b"}"));
+		json
+	}
+
+	public fun getReplyIDs(state: &State, message_id: u64): vector<u64> {
+		let mut ids = vector::empty<u64>();
+		let mut i = 0;
+		while (i < state.reply_counter) {
+			if (table::contains(&state.replies, i)) {
+				let reply = table::borrow(&state.replies, i);
+				if (reply.message_id == message_id) {
+					vector::push_back(&mut ids, i);
+				};
+			};
+			i = i + 1;
+		};
+		ids
+	}
+
+	public fun all_replies(state: &State, id: u64): string::String {
+		let reply = table::borrow(&state.replies, id);
+		// Build JSON: {"message":"...","ideas_id":...,"id":...}
+		let mut json = string::utf8(b"{\"message\":\"");
+		string::append(&mut json, string::utf8(*string::as_bytes(&reply.message)));
+		string::append(&mut json, string::utf8(b"\",\"ideas_id\":"));
+		let ideas_id_str = u64_to_string(reply.ideas_id);
+		string::append(&mut json, ideas_id_str);
+		string::append(&mut json, string::utf8(b",\"id\":"));
+		let id_str = u64_to_string(id);
+		string::append(&mut json, id_str);
+		string::append(&mut json, string::utf8(b"}"));
+		json
+	}
+
+	public fun message_ids(state: &State): u64 {
+		state.message_counter
+	}
+
+	public fun reply_ids(state: &State): u64 {
+		state.reply_counter
+	}
+
+	// Helper function to convert u64 to string
+	fun u64_to_string(value: u64): string::String {
+		if (value == 0) {
+			return string::utf8(b"0")
+		};
+		let mut result = vector::empty<u8>();
+		let mut temp = value;
+		while (temp > 0) {
+			let digit = ((temp % 10) as u8) + 48;
+			vector::push_back(&mut result, digit);
+			temp = temp / 10;
+		};
+		vector::reverse(&mut result);
+		string::utf8(result)
+	}
+
 }

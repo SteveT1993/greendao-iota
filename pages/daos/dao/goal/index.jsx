@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head"
 import NavLink from "next/link"
-import useContract from "../../../../services/useContract"
+import { useRouter } from 'next/router';
 import { useIOTA } from '../../../../contexts/IOTAContext'
-import Loader from '../../../../components/Loader/Loader'
+// Loader component not used here; ElementLoader is used instead
 
 import { Header } from "../../../../components/layout/Header"
-import isServer from "../../../../components/isServer"
 import styles from "../../daos.module.css"
 import Card from "../../../../components/components/Card/Card"
 import { ControlsPlus, ControlsChevronRight, ControlsChevronLeft } from "@heathmont/moon-icons-tw"
 import { Button } from "@heathmont/moon-core-tw"
 import Skeleton from "@mui/material/Skeleton"
-let running = true
 
 
 export default function Goal() {
+	// Ensure hooks run in the same order on server and client.
+	// Use mounted flag to wait for client-only rendering instead of early return.
+	const [mounted, setMounted] = useState(false)
+	useEffect(() => { setMounted(true) }, [])
+
 	//Variables
 	const [list, setList] = useState([])
 	const [GoalURI, setGoalURI] = useState({
@@ -31,31 +34,46 @@ export default function Goal() {
 		isOwner: true
 	})
 	const [goalId, setGoalID] = useState(-1)
-	const { contract, signerAddress } = useContract()
-	const { sleep } = useIOTA()
-
-	const regex = /\[(.*)\]/g
-	let m
-	let id = "" //id from url
+	const [daoId, setDaoId] = useState(-1)
+	const [running, setRunning] = useState(true)
+	const { contract, currentWalletAddress, sleep, getGoalUri, getAllIdeasByGoalId, getIdeasIdByIdeasUri } = useIOTA()
+	const router = useRouter();
 
 	// use shared sleep helper from IOTA context
 
 	useEffect(() => {
-		fetchContractData()
-	}, [contract])
+		if (contract && goalId >= 0) fetchContractData()
+	}, [contract, goalId])
+	useEffect(() => {
+		const timer = setInterval(() => {
+			calculateTimeLeft()
+		}, 1000)
+		return () => clearInterval(timer)
+	}, [])
 
-	setInterval(function () {
-		calculateTimeLeft()
-	}, 1000)
-	if (isServer()) return null
-	const str = decodeURIComponent(window.location.search)
-
-	while ((m = regex.exec(str)) !== null) {
-		if (m.index === regex.lastIndex) {
-			regex.lastIndex++
-		}
-		id = m[1]
-	}
+// Parse router params or legacy query on mount / when router is ready
+useEffect(() => {
+    if (router && router.query && Object.keys(router.query).length) {
+        if (router.query.daoId && router.query.goalId) {
+            setDaoId(Number(router.query.daoId))
+            setGoalID(Number(router.query.goalId))
+            return
+        }
+    }
+    if (typeof window !== 'undefined') {
+        const regex = /\[(.*)\]/g
+        const str = decodeURIComponent(window.location.search)
+        let m
+        let parsed = ""
+        while ((m = regex.exec(str)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++
+            }
+            parsed = m[1]
+        }
+        if (parsed) setGoalID(Number(parsed))
+    }
+}, [router.query, router.isReady])
 	function calculateTimeLeft() {
 		//Calculate time left
 		try {
@@ -75,18 +93,16 @@ export default function Goal() {
 
 	async function fetchContractData() {
 		//Fetching data from Smart contract
-		running = true
+		setRunning(true)
 		try {
-			if (contract && id) {
-				setGoalID(Number(id))
-
-				const goalURI = JSON.parse(await contract.goal_uri(Number(id))) //Getting total goal (Number)
-
-				const totalIdeas = await contract.get_all_ideas_by_goal_id(Number(id)) //Getting total goal (Number)
+			if (contract && goalId >= 0) {
+				const goalURI = JSON.parse(await getGoalUri(Number(goalId))) //Getting total goal (Number)
+				const totalIdeas = await getAllIdeasByGoalId(Number(goalId)) //Getting total goal (Number)
+				console.log("all Ideas", totalIdeas);
 				const arr = []
-				for (let i = 0; i < Object.keys(totalIdeas).length; i++) {
+				for (let i = 0; i < (totalIdeas).length; i++) {
 					//total goal number Iteration
-					const ideasId = await contract.get_ideas_id_by_ideas_uri(totalIdeas[i])
+					const ideasId = await getIdeasIdByIdeasUri(totalIdeas[i])
 					const object = JSON.parse(totalIdeas[i])
 					if (object) {
 						arr.push({
@@ -101,24 +117,25 @@ export default function Goal() {
 					}
 				}
 				setList(arr)
-				
+
 				setGoalURI({
-					goalId: Number(id),
+					goalId: Number(goalId),
 					Title: goalURI.properties.Title.description,
 					Description: goalURI.properties.Description.description,
 					Budget: goalURI.properties.Budget.description,
 					End_Date: goalURI.properties.End_Date?.description,
 					wallet: goalURI.properties.wallet.description,
 					logo: goalURI.properties.logo.description.url,
-					isOwner: goalURI.properties.wallet.description.toString().toLocaleLowerCase() === signerAddress.toString().toLocaleLowerCase() ? true : false
+					isOwner: goalURI.properties.wallet.description.toString().toLocaleLowerCase() === currentWalletAddress.toString().toLocaleLowerCase() ? true : false
 				})
 
 				/** TODO: Fix fetch to get completed ones as well */
 				if (document.getElementById("Loading")) document.getElementById("Loading").style = "display:none";
 			}
 		} catch (error) {
+			console.log(error);
 		}
-		running = false
+			setRunning(false)
 	}
 
 	function LeftDate(datetext, status) {
@@ -135,16 +152,19 @@ export default function Goal() {
 		}
 		return da.toString() + " Days " + h.toString() + " hours " + m.toString() + " minutes " + s.toString() + " seconds" + " Left"
 	}
-	function Loader({ element, type = "rectangular", width = "50", height = "23" }) {
-		if (running) {
+	function ElementLoader({ element = null, show = running, type = "rectangular", width = "50", height = "23" }) {
+		if (show) {
 			return <Skeleton variant={type} width={width} height={height} />
 		} else {
 			return element
 		}
 	}
+	// Wait for client mount before rendering UI that accesses window/document
+	if (!mounted) return null
 	return (
 		<>
-			<Loader show={running} text={"Loading goal..."} />
+			{/* top-level loading indicator replaced by ElementLoader usage below */}
+			<ElementLoader show={running} text={"Loading goal..."} />
 			<Header></Header>
 			<Head>
 				<title>Goal</title>
@@ -181,7 +201,7 @@ export default function Goal() {
 						</NavLink>
 						{!GoalURI.isOwner ? (
 							<>
-								<a href={`/CreateIdeas?[${goalId}]`}>
+								<a href={daoId >= 0 ? `/CreateIdeas?daoId=${daoId}&goalId=${goalId}` : `/CreateIdeas?[${goalId}]`}>
 									<Button style={{ width: "150px", position: "absolute", right: "1rem" }} iconLeft>
 										<ControlsPlus className="text-moon-24" />
 										<div className="card BidcontainerCard">
@@ -198,7 +218,7 @@ export default function Goal() {
 
 				<div className={styles.divider}></div>
 
-				<Loader
+				<ElementLoader
 					element={
 						<div className="flex flex-col gap-8">
 							<img src={GoalURI.logo} />{" "}
@@ -207,7 +227,7 @@ export default function Goal() {
 					width="90%"
 					height={578}
 				/>
-				<Loader
+				<ElementLoader
 					element={
 						<div className="flex flex-col gap-8">
 							{list.map((listItem, index) => (
@@ -227,12 +247,12 @@ export default function Goal() {
 												{LeftDate(GoalURI.End_Date, listItem.status)}
 											</div>
 
-											<a href={`/daos/dao/goal/ideas?[${listItem.ideasId}]`}>
-												<Button iconleft>
-													<ControlsChevronRight />
-													See more
-												</Button>
-											</a>
+										<a href={daoId >= 0 ? `/daos/${daoId}/goals/${goalId}/ideas/${listItem.ideasId}` : `/daos/dao/goal/ideas?[${listItem.ideasId}]`}>
+											<Button iconleft>
+												<ControlsChevronRight />
+												See more
+											</Button>
+										</a>
 										</div>
 									</div>
 								</Card>

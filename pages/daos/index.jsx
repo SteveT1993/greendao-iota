@@ -17,8 +17,7 @@ let running = true
 export default function DAOs() {
 	//Variables
 	const [list, setList] = useState([])
-	const { contract } = useContract()
-	const { daos } = useIOTA()
+	const { daos ,currentWalletAddress} = useIOTA()
 
 	useEffect(() => {
 		fetchContractData()
@@ -59,6 +58,7 @@ export default function DAOs() {
 						logo: daoURI.logo,
 						wallet: d.dao_wallet,
 						SubsPrice: daoURI.subs_price,
+						isOwner: d.dao_wallet.toLowerCase() === currentWalletAddress.toLowerCase()
 					};
 				});
 				setList(arr);
@@ -137,7 +137,7 @@ export default function DAOs() {
 												<div className="font-bold">{listItem.Title}</div>
 												<div className="whitespace-nowrap truncate">
 													Organised by&nbsp;
-													{listItem.wallet != window?.accountId ? listItem.wallet : <>(Me)</>}
+													{listItem.wallet != currentWalletAddress ? listItem.wallet : <>(Me)</>}
 												</div>
 												<div className="whitespace-nowrap truncate">
 													Subscription :
@@ -146,13 +146,14 @@ export default function DAOs() {
 											</div>
 										</div>
 										<div className="flex align-center flex justify-end align-center gap-2">
-											<a href={`/DesignDao?[${listItem.daoId}]`}>
+
+										{(listItem.isOwner) &&	<a href={`/DesignDao?daoId=${listItem.daoId}`}>
 												<Button iconLeft>
 													<GenericEdit />
 													Customize
 												</Button>
-											</a>
-											<a href={`/daos/dao?[${listItem.daoId}]`}>
+											</a>}
+											<a href={`/daos/${listItem.daoId}`}>
 												<Button iconLeft>
 													<ControlsChevronRight />
 													Go to Dao

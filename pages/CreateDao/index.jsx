@@ -3,7 +3,6 @@ import Head from "next/head";
 import UseFormInput from "../../components/components/UseFormInput";
 import UseFormTextArea from "../../components/components/UseFormTextArea";
 import { Header } from "../../components/layout/Header";
-import NavLink from "next/link";
 import { useRouter } from "next/router";
 import isServer from "../../components/isServer";
 import styles from "./CreateDao.module.css";
@@ -11,6 +10,7 @@ import { Button } from "@heathmont/moon-core-tw";
 import { GenericPicture, ControlsPlus } from "@heathmont/moon-icons-tw";
 import { Checkbox } from "@heathmont/moon-core-tw";
 import Loader from '../../components/Loader/Loader';
+import { Transaction, } from "@iota/iota-sdk/transactions";
 
 import { useIPFSContext } from '../../contexts/IPFSContext';
 import { useIOTA } from '../../contexts/IOTAContext';
@@ -136,12 +136,8 @@ export default function CreateDao() {
     // Call IOTA Move contract using IOTAContext
     try {
       const txOutput = await sendTransaction(tx,FUNCTION, [tx.pure.string(dao_wallet), tx.pure.string(dao_uri), tx.pure.string(formatted_template)]);
-      if (document.getElementById("plugin").checked) {
-        await CreatePlugin(
-          `http://${window.location.host}/daos/dao?[${txOutput?.objectId || "new"}]`
-        );
-      }
-  await sleep(2000);
+     
+  await sleep(5000);
       router.push("/daos");
     } catch (error) {
       console.error(error);
@@ -297,8 +293,10 @@ export default function CreateDao() {
                   </Button>
                 </div>
               </div>
+              
             </div>
           </div>
+      <CreateDaoBTN/>
         </div>
       </div>
       <Loader show={loading} text="Creating DAO..." />

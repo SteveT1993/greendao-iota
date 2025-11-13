@@ -6,14 +6,14 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
-import { ethers } from "ethers";
+import { Transaction } from "@iota/iota-sdk/transactions";
 import FormControl, { useFormControl } from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Input from "@mui/material/Input";
 import LoadingButton from "@mui/lab/LoadingButton";
 import Container from "@mui/material/Container";
 import Alert from "@mui/material/Alert";
-import useContract from "../../../services/useContract";
+import { useIOTA } from "../../../contexts/IOTAContext";
 
 
 export default function DonateCoin({ ideasid, show, onHide, address }) {
@@ -22,7 +22,7 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 	const [Coin, setCoin] = useState("IOTA");
 	const [isLoading, setisLoading] = useState(false);
 	const [isSent, setisSent] = useState(false);
-	const { sendTransaction } = useContract()
+	const { sendTransaction, sendNative, currentWalletAddress, Balance: IotaBalance,WrapBigNumber } = useIOTA();
 	let alertBox = null;
 	const [transaction, setTransaction] = useState({
 		link: "",
@@ -61,32 +61,37 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 		const { amount } = e.target;
 		alertBox = e.target.querySelector("[name=alertbox]");
 		setisLoading(true);
+
+		try {
 		ShowAlert("pending","Transferring " + amount.value + " IOTA .....");
 
-		const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
-		//If it is sending from hedera then it will not use bridge
-		const tx = {
-			from: window?.ethereum?.selectedAddress?.toLocaleLowerCase(),
-			to: address,
-			value: ethers.utils.parseEther(amount.value)
-		};
-		const reciept = await (await signer.sendTransaction(tx)).wait();
+	const amt = Number(amount.value);
+				if (!(amt > 0)) throw new Error('Invalid amount');
+				const result = await sendNative(address, amt);
+				let link = "";
+				try { link = result?.digest ?? result?.transactionBlock?.digest ?? result?.txDigest ?? JSON.stringify(result); } catch (e) { link = String(result); }
+				setTransaction({ link });
+				ShowAlert("success", "Transfer Successful: " + (link ? link : ""));
 
 
-		setTransaction({
-			link: reciept.transaction
-		});
-		ShowAlert("pending","Saving Information.....");
-
-		// Saving Donation count on smart contract
-		await sendTransaction(await window.contract.populateTransaction.add_donation(Number(ideasid), ethers.utils.parseUnits(amount.value, 'gwei'), CurrentAddress));
-
-		ShowAlert("success","Donate Successful");
-
-
-		LoadData();
-		setisLoading(false);
-		setisSent(true);
+				ShowAlert("pending","Saving Information .....");
+				// default: call Move function to record donation on-chain
+				const tx = new Transaction();
+				const amountBase = tx.pure.u64(WrapBigNumber(Number(amount.value)));
+				const result2 = await sendTransaction(tx, "add_donation", [tx.pure.u64(Number(ideasid)), amountBase, tx.pure.string(CurrentAddress || currentWalletAddress || "")]);
+				let link2 = "";
+				try { link2 = result2?.digest ?? result2?.transactionBlock?.digest ?? result2?.txDigest ?? JSON.stringify(result2); } catch (e) { link2 = String(result2); }
+				setTransaction({ link2 });
+				ShowAlert("success","Donate Successful: " + (link2 ? link2 : ""));
+				LoadData();
+				setisLoading(false);
+				setisSent(true);
+			
+		} catch (err) {
+			console.error(err);
+			ShowAlert("error", "Transaction failed: " + (err?.message || err));
+			setisLoading(false);
+		}
 	}
 	const StyledPaper = styled(Paper)(({ theme }) => ({
 		backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
@@ -95,14 +100,11 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 		color: theme.palette.text.primary
 	}));
 	async function LoadData() {
-		const Web3 = require("web3");
-		const web3 = new Web3(window.ethereum);
-		let Balance = await web3.eth.getBalance(window?.ethereum?.selectedAddress);
-		let token = " " + Coin;
-
-
-		setBalance((Balance / 1000000000000000000).toFixed(5) + token);
-		setCurrentAddress(window?.ethereum?.selectedAddress?.toLocaleLowerCase());
+		// Use IOTA context balance and wallet address
+		const token = " " + Coin;
+		if (IotaBalance) setBalance(IotaBalance + token);
+		else setBalance("Loading...");
+		setCurrentAddress((currentWalletAddress || "").toString());
 	}
 	useEffect(() => {
 		LoadData();
@@ -143,14 +145,14 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 
 
 						<StyledPaper sx={{ my: 1, mx: "auto", p: 2 }}>
-							<div variant="standard">
+							<div variant="standard" style={{wordBreak: 'break-all'}}>
 								<InputLabel>Target Address</InputLabel>
 								<span>{address}</span>
 							</div>
 						</StyledPaper>
 
 						<StyledPaper sx={{ my: 1, mx: "auto", p: 2 }}>
-							<div variant="standard">
+							<div variant="standard" style={{wordBreak: 'break-all'}}>
 								<InputLabel>From Address</InputLabel>
 								<span>{CurrentAddress} (Your)</span>
 							</div>
