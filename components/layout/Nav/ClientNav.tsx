@@ -68,7 +68,7 @@ export default function ClientNav() {
         running = true;
         fetchInfo();
     }
-  }, [count,currentWalletAddress]);
+  }, [count,currentWalletAddress,wallets]);
 
   useEffect(() => {
     const id = setInterval(() => {
