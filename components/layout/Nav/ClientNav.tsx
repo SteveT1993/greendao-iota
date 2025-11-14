@@ -78,7 +78,6 @@ export default function ClientNav() {
         }
       }
     }, 1000);
-    return () => clearInterval(id);
   }, []);
 
   async function onClickDisConnect() {
