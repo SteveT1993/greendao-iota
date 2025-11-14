@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import Head from "next/head"
-import useContract from "../../services/useContract"
+import { useIOTA } from "../../contexts/IOTAContext"
 import { Header } from "../../components/layout/Header"
 import isServer from "../../components/isServer"
 import styles from "../daos/daos.module.css"
@@ -12,7 +12,101 @@ import Skeleton from "@mui/material/Skeleton"
 let running = true;
 export default function Profile() {
 	//Variables
-	const { contract, signerAddress } = useContract()
+	const iota = useIOTA()
+
+	// Build a lightweight backward-compatible contract proxy so existing
+	// page code can keep calling the old method names while we use the
+	// IOTA context helpers under the hood.
+	const contract = useMemo(() => {
+		if (!iota) return null;
+
+		return {
+			get_all_daos: async () => {
+				try {
+					const daos = await iota.getAllDaos();
+					// Normalize entries to JSON strings so existing parsing logic continues to work
+					return daos.map(d => {
+						try {
+							if (typeof d === 'string') return d;
+							// try to find a uri field
+							const maybe = d.dao_uri || d.goal_uri || d.ideas_uri || d.properties || d.value || d;
+							if (typeof maybe === 'string') return maybe;
+							return JSON.stringify(d);
+						} catch (e) { return JSON.stringify(d); }
+					});
+				} catch (e) { console.error('get_all_daos proxy error', e); return []; }
+			},
+			get_all_ideas: async () => {
+				try {
+					const out = [];
+					const daos = await iota.getAllDaos();
+					for (let idx = 0; idx < daos.length; idx++) {
+						try {
+							const goals = await iota.getGoalsForDao(idx);
+							for (const g of goals) {
+								const gid = Number(g.goalId ?? g.id ?? 0);
+								const ideas = await iota.getAllIdeasByGoalId(gid);
+								if (Array.isArray(ideas)) out.push(...ideas);
+							}
+						} catch (e) { /* continue */ }
+					}
+					return out;
+				} catch (e) { console.error('get_all_ideas proxy error', e); return []; }
+			},
+			_donated: async (addr) => {
+				// not directly available from IOTA context; return 0 as fallback
+				return 0;
+			},
+			_user_badges: async (addr) => {
+				try { return await iota.getUserBadge(addr) } catch (e) { return {} }
+			},
+			_message_read_ids: async () => {
+				try { return await iota.getMessageIds() } catch (e) { return 0 }
+			},
+			all_read_messages: async (i) => {
+				try {
+					const res = await iota.getAllMessages(i);
+					if (typeof res === 'string') return JSON.parse(res);
+					return res;
+				} catch (e) { return { sender: "", message: "", ideas_id: i } }
+			},
+			get_all_goals_by_dao_id: async (daoId) => {
+				try {
+					const goals = await iota.getGoalsForDao(daoId);
+					
+					// return as array of strings to match previous usage
+					return goals.map(g => JSON.stringify(g.goal_uri ?? g));
+				} catch (e) { return [] }
+			},
+			get_goal_id_from_ideas_uri: async (uri) => {
+				try { return await iota.getGoalIdFromIdeasUri(uri) } catch (e) { return 0 }
+			},
+			get_ideas_votes_from_goal: async (goalId, id) => {
+				try { return await iota.getIdeasVotesFromGoal(goalId, id) } catch (e) { return [] }
+			},
+			_donations_ids: async () => 0,
+			_donations: async (i) => ({ wallet: "", ideas_id: 0, donation: 0 }),
+			_ideas_uris: async (id) => ({ ideas_uri: await iota.getIdeasUri(id) }),
+			_message_ids: async () => { try { return await iota.getMessageIds() } catch (e) { return 0 } },
+			all_messages: async (i) => {
+				try {
+					const res = await iota.getAllMessages(i);
+					if (typeof res === 'string') return JSON.parse(res);
+					return res;
+				} catch (e) { return { sender: "", message: "", ideas_id: i } }
+			},
+			_reply_ids: async () => { try { return await iota.getReplyIds() } catch (e) { return 0 } },
+			all_replies: async (i) => {
+				try {
+					const res = await iota.getAllReplies(i);
+					if (typeof res === 'string') return JSON.parse(res);
+					return res;
+				} catch (e) { return { message: "", ideas_id: i } }
+			}
+		}
+	}, [iota])
+
+	const fetchedOnceRef = useRef(false);
 	const [Donated, setDonated] = useState([])
 	const [UserBadges, setUserBadges] = useState({
 		dao: false,
@@ -24,7 +118,7 @@ export default function Profile() {
 		comment: false,
 		reply: false
 	})
-	const [TotalRead, setTotalRead] = useState(0)
+	const [TotalCommented, setTotalRead] = useState(0)
 	const [Replied, setReplied] = useState(0)
 	const [Daos, setDaos] = useState([])
 	const [Ideas, setIdeas] = useState([])
@@ -34,8 +128,11 @@ export default function Profile() {
 
 
 	useEffect(() => {
+		if (!contract || iota.currentWalletAddress == null) return;
+		if (fetchedOnceRef.current) return;
+		fetchedOnceRef.current = true;
 		fetchContractData();
-	}, [contract])
+	}, [contract,iota])
 
 
 	if (isServer()) return null;
@@ -43,30 +140,34 @@ export default function Profile() {
 
 
 	async function fetchContractData() {
-		if (!contract) return false;
+		if (!contract|| iota.currentWalletAddress == null ) return false;
 		running = true;
 		//Fetching data from Smart contract
 		let allDaos = await contract.get_all_daos();
 		let allIdeas = await contract.get_all_ideas();
 		let donated = Number(await contract._donated(address.toLocaleLowerCase())) / 1e9;
 
-		setUserBadges(await contract._user_badges(address.toLocaleLowerCase()));
+		const fetchedBadges = await contract._user_badges(address);
+		const defaultBadges = {
+			dao: false,
+			joined: false,
+			goal: false,
+			ideas: false,
+			vote: false,
+			donation: false,
+			comment: false,
+			reply: false
+		};``
+		setUserBadges(fetchedBadges && typeof fetchedBadges === 'object' ? { ...defaultBadges, ...fetchedBadges } : defaultBadges);
 
 		let total_read = 0;
-		let _message_read_ids = await contract._message_read_ids();
-		for (let i = 0; i < _message_read_ids; i++) {
-			let ReadURI = await contract.all_read_messages(i);
-			if (ReadURI.wallet.toLocaleLowerCase() == address.toLocaleLowerCase()) {
-				total_read += 1;
-			}
-		}
-
+		
 
 
 		let founddao = [];
 		for (let i = 0; i < allDaos.length; i++) {
 			let dao_info = JSON.parse(allDaos[i]);
-			if (dao_info.properties.wallet.description.toLocaleLowerCase() == address.toLocaleLowerCase()) {
+			if (dao_info.wallet.toLocaleLowerCase() == address.toLocaleLowerCase()) {
 				dao_info.id = i;
 				let goal = await contract.get_all_goals_by_dao_id(i);;
 				dao_info.goals = goal.filter(e => { return e !== "" });
@@ -116,14 +217,37 @@ export default function Profile() {
 
 		let ideasReplied = 0;
 		let MessagesIdeasURIS = [];
-		let _message_ids = await window.contract._message_ids();
+		let _message_ids = await contract._message_ids();
 		for (let i = 0; i < _message_ids; i++) {
-			let messageURI = await window.contract.all_messages(i);
-			if (messageURI.sender.toLocaleLowerCase() == address.toLocaleLowerCase()) {
-				ideasReplied += 1;
-				let ideaURI = JSON.parse((await window.contract._ideas_uris(Number(messageURI.ideas_id))).ideas_uri);
+			let messageURI = null;
+			try {
+				messageURI = await contract.all_messages(i);
+			} catch (e) {
+				console.warn('all_messages call failed for id', i, e);
+				continue;
+			}
 
-				let parsed_message = JSON.parse(messageURI.message);
+			// Ensure we have an object with a sender string
+			const sender = messageURI && typeof messageURI === 'object' && messageURI.sender ? String(messageURI.sender) : "";
+			if (sender && sender.toLocaleLowerCase() === address.toLocaleLowerCase()) {
+				ideasReplied += 1;
+				let ideaURI = {};
+				console.log(messageURI);
+				try {
+					const ideasRes = await contract._ideas_uris(Number(messageURI.ideas_id));
+					ideaURI = JSON.parse(ideasRes.ideas_uri);
+				} catch (e) {
+					console.warn('Failed to load idea URI for message', i, e);
+					ideaURI = { id: Number(messageURI?.ideas_id || 0), properties: { wallet: { description: "" } } };
+				}
+
+				let parsed_message = { message: "" };
+				try {
+					parsed_message = typeof messageURI.message === 'string' && messageURI.message !== '' ? JSON.parse(messageURI.message) : (messageURI.message || { message: "" });
+				} catch (e) {
+					console.warn('Failed to parse message content for message', i, e);
+					parsed_message = { message: String(messageURI.message) };
+				}
 				parsed_message.idea = ideaURI;
 
 				allMessages.push(parsed_message);
@@ -139,17 +263,40 @@ export default function Profile() {
 				MessagesIdeasURIS.push(ideaURI);
 			}
 		}
+		console.log(allMessages);
 
 		let _reply_ids = await contract._reply_ids();
 		for (let i = 0; i < _reply_ids; i++) {
-			let repliesURI = await contract.all_replies(i);
-			if (JSON.parse(repliesURI.message).address.toLocaleLowerCase() == address.toLocaleLowerCase()) {
-				ideasReplied += 1;
-				let ideaURI = JSON.parse((await window.contract._ideas_uris(Number(repliesURI.ideas_id))).ideas_uri);
+			let repliesURI = null;
+			try {
+				repliesURI = await contract.all_replies(i);
+			} catch (e) {
+				console.warn('all_replies call failed for id', i, e);
+				continue;
+			}
 
-				let parsed_rplied = JSON.parse(repliesURI.message);
-				parsed_rplied.idea = ideaURI;
-				allMessages.push(parsed_rplied);
+			let parsed_reply_message = null;
+			try {
+				parsed_reply_message = typeof repliesURI.message === 'string' && repliesURI.message !== '' ? JSON.parse(repliesURI.message) : (repliesURI.message || null);
+			} catch (e) {
+				console.warn('Failed to parse reply message for id', i, e);
+				parsed_reply_message = { address: "", message: String(repliesURI.message) };
+			}
+
+			const replyAddress = parsed_reply_message && parsed_reply_message.address ? String(parsed_reply_message.address) : "";
+			if (replyAddress && replyAddress.toLocaleLowerCase() === address.toLocaleLowerCase()) {
+				ideasReplied += 1;
+				let ideaURI = {};
+				try {
+					const ideasRes = await contract._ideas_uris(Number(repliesURI.ideas_id));
+					ideaURI = JSON.parse(ideasRes.ideas_uri);
+				} catch (e) {
+					console.warn('Failed to load idea URI for reply', i, e);
+					ideaURI = { id: Number(repliesURI?.ideas_id || 0), properties: { wallet: { description: "" } } };
+				}
+
+				parsed_reply_message.idea = ideaURI;
+				allMessages.push(parsed_reply_message);
 
 				let existsIdea = MessagesIdeasURIS.findIndex(e => e.id == Number(repliesURI.ideas_id));
 				if (existsIdea != -1) {
@@ -255,7 +402,7 @@ export default function Profile() {
 						}} onClick={() => { showPanel(0, '#f44336') }} >
 							Summary
 						</button>
-						<button onClick={() => { showPanel(1, '#4caf50') }} >
+						<button style={{display:'none'}} onClick={() => { showPanel(1, '#4caf50') }} >
 							Activity
 						</button>
 						<button onClick={() => { showPanel(2, '#4caf50') }} >
@@ -282,10 +429,10 @@ export default function Profile() {
 											>
 												<div id="ember1268" className="user-stat ember-view">
 													<span className="value">
-														<span className="number">{TotalRead}</span>
+														<span className="number">{TotalCommented}</span>
 													</span>
 													<span className="label">
-														total message read
+														total commented
 													</span>
 												</div>
 											</a>
@@ -384,7 +531,7 @@ export default function Profile() {
 														</span>
 														<br></br>
 														<a href={"/daos/dao?[" + item.id + "]"}>
-															{item.properties.Title.description}
+															{item.title}
 														</a>
 													</li>
 												})
@@ -626,7 +773,7 @@ export default function Profile() {
 
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.dao ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.dao ? "granted" : ""}`}>
 										<svg xmlns="http://www.w3.org/2000/svg" width={45} height={45} viewBox="0 0 100 100">
 											<g>
 												<path
@@ -676,7 +823,7 @@ export default function Profile() {
 
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.joined ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.joined ? "granted" : ""}`}>
 										<svg xmlns="http://www.w3.org/2000/svg" width={45} height={45} viewBox="0 0 100 100">
 											<g>
 												<path
@@ -718,7 +865,7 @@ export default function Profile() {
 
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.goal ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.goal ? "granted" : ""}`}>
 										<svg
 											width={45} height={45}
 											viewBox="0 0 240 240"
@@ -756,7 +903,7 @@ export default function Profile() {
 							</div>
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.ideas ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.ideas ? "granted" : ""}`}>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											width={45} height={45}
@@ -842,7 +989,7 @@ export default function Profile() {
 								</div>
 							</div><div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.vote ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.vote ? "granted" : ""}`}>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -884,7 +1031,7 @@ export default function Profile() {
 							</div>
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.donation ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.donation ? "granted" : ""}`}>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -934,7 +1081,7 @@ export default function Profile() {
 							</div>
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.comment ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.comment ? "granted" : ""}`}>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -970,7 +1117,7 @@ export default function Profile() {
 							</div>
 							<div id="ember114" className="badge-card medium basic ember-view">
 								<div className="badge-contents">
-									<a className={`badge-icon badge-type-bronze ${UserBadges.reply ? "granted" : ""}`}>
+									<a className={`badge-icon badge-type-bronze ${UserBadges?.reply ? "granted" : ""}`}>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											xmlnsXlink="http://www.w3.org/1999/xlink"

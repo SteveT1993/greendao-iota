@@ -561,7 +561,7 @@
 	state.reply_counter = state.reply_counter + 1;
 		id
 	}	/// Get DAO by id
-	public fun get_dao(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_dao(state: &State, id: u64) {
 		let dao = table::borrow(&state.daos, id);
 		event::emit(DaoRetrieved {
 			id,
@@ -573,7 +573,7 @@
 	}
 
 	/// Get Goal by id
-	public fun get_goal(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_goal(state: &State, id: u64) {
 		let goal = table::borrow(&state.goals, id);
 		event::emit(GoalRetrieved {
 			id,
@@ -583,7 +583,7 @@
 	}
 
 	/// Get Ideas by id
-	public fun get_ideas(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_ideas(state: &State, id: u64) {
 		let ideas = table::borrow(&state.ideas, id);
 		event::emit(IdeasRetrieved {
 			id,
@@ -594,7 +594,7 @@
 	}
 
 	/// Get Donation by id
-	public fun get_donation(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_donation(state: &State, id: u64) {
 		let d = table::borrow(&state.donations, id);
 		event::emit(DonationRetrieved {
 			id,
@@ -605,7 +605,7 @@
 	}
 
 	/// Get Join by id
-	public fun get_join(state: &State, id: u64, ctx: &mut tx_context::TxContext) {
+	public fun get_join(state: &State, id: u64) {
 		let j = table::borrow(&state.joins, id);
 		event::emit(JoinRetrieved {
 			id,
@@ -635,7 +635,7 @@
 	}
 
 	/// Get UserBadge by wallet string
-	public fun get_user_badge(state: &State, wallet: vector<u8>, ctx: &mut tx_context::TxContext) {
+	public fun get_user_badge(state: &State, wallet: vector<u8>) {
 		let wallet_str = string::utf8(wallet);
 		let b = table::borrow(&state.user_badges, wallet_str);
 		event::emit(UserBadgeRetrieved {
@@ -652,7 +652,7 @@
 	}
 
 	/// View all DAOs (returns vector of DaoInfo)
-	public fun view_all_daos(state: &State, ctx: &mut tx_context::TxContext) {
+	public fun view_all_daos(state: &State) {
 		let mut daos = vector::empty<DaoRetrieved>();
 		let mut i = 0;
 		while (i < state.dao_counter) {
@@ -672,7 +672,7 @@
 	}
 
 	/// View goals for a DAO
-	public fun view_goals_for_dao(state: &State, dao_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_goals_for_dao(state: &State, dao_id: u64) {
 		let mut goals = vector::empty<GoalRetrieved>();
 		let mut i = 0;
 		while (i < state.goal_counter) {
@@ -692,7 +692,7 @@
 	}
 
 	/// View ideas for a goal
-	public fun view_ideas_for_goal(state: &State, goal_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_ideas_for_goal(state: &State, goal_id: u64) {
 		let mut ideas = vector::empty<IdeasRetrieved>();
 		let mut i = 0;
 		while (i < state.ideas_counter) {
@@ -713,7 +713,7 @@
 	}
 
 	/// View donations for an idea
-	public fun view_donations_for_idea(state: &State, ideas_id: u64, ctx: &mut tx_context::TxContext) {
+	public fun view_donations_for_idea(state: &State, ideas_id: u64) {
 		let mut donations = vector::empty<DonationRetrieved>();
 		let mut i = 0;
 		while (i < state.donation_counter) {

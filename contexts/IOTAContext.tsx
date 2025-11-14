@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useWallets, useSignAndExecuteTransaction, useConnectWallet, useCurrentAccount, useIotaClient, useIotaClientQuery } from "@iota/dapp-kit";
 
-import { Transaction, } from "@iota/iota-sdk/transactions";
+import { Transaction } from "@iota/iota-sdk/transactions";
 import { STATE_OBJECT, MODULE, PACKAGE_ID } from "./networkConfig";
 
 
@@ -163,6 +163,13 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return stateData;
     }
 
+    // Wrapper around devInspectTransactionBlock to handle nodes that reject a missing/invalid sender
+    async function safeDevInspect(tx: Transaction) {
+        if (!client) throw new Error("IOTA client not available");
+        return await client.devInspectTransactionBlock({ transactionBlock: tx, sender: currentWalletAddress });
+
+    }
+
     // Helper to normalize devInspect results across SDK versions and extract the primary return value.
     function extractDevInspectValue(result: any): any {
         if (!result) return null;
@@ -233,8 +240,8 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return valueCandidate;
     }
     
-       async function getGoalsForDao(daoId: number) {
-        if (!client || !currentWalletAddress) throw new Error("IOTA client or wallet not available");
+    async function getGoalsForDao(daoId: number) {
+     if (!client) throw new Error("IOTA client not available");
 
         const tx = new Transaction();
         tx.moveCall({
@@ -242,10 +249,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(daoId)],
         });
 
-        const result = await client.devInspectTransactionBlock({
-            transactionBlock: tx,
-            sender: currentWalletAddress,
-        });
+        const result = await safeDevInspect(tx);
 
         // Get the event from the devInspect result
         const event = result.events?.find(e => e.type === `${PACKAGE_ID}::dao::GoalsForDaoRetrieved`);
@@ -307,7 +311,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     async function getGoalUri(id: number) {
-        if (!client || !currentWalletAddress) return "";
+        if (!client) return "";
         if (isNaN(id) || id < 0) {
             console.error(`getGoalUri: invalid id=${id}`);
             return "";
@@ -318,10 +322,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
             return typeof val === 'string' ? val : String(val ?? "");
         } catch (e) {
@@ -330,7 +331,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getAllIdeasByGoalId(id: number) {
-        if (!client || !currentWalletAddress) return [];
+        if (!client) return [];
         if (isNaN(id) || id < 0) {
             console.error(`getAllIdeasByGoalId: invalid id=${id}`);
             return [];
@@ -341,10 +342,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
 
             const val = extractDevInspectValue(result);
 
@@ -397,17 +395,14 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getIdeasIdByIdeasUri(uri: string) {
-        if (!client || !currentWalletAddress) return 0;
+        if (!client) return 0;
         const tx = new Transaction();
         tx.moveCall({
             target: `${PACKAGE_ID}::${MODULE}::get_ideas_id_by_ideas_uri`,
             arguments: [tx.object(STATE_OBJECT), tx.pure.string(uri)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
             return Number(val ?? 0);
         } catch (e) {
@@ -416,7 +411,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getIdeasUri(id: number) {
-        if (!client || !currentWalletAddress) return "";
+        if (!client) return "";
         if (isNaN(id) || id < 0) {
             console.error(`getIdeasUri: invalid id=${id}`);
             return "";
@@ -427,10 +422,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
             return typeof val === 'string' ? val : String(val ?? "");
         } catch (e) {
@@ -439,17 +431,14 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getUserBadge(wallet: string) {
-        if (!client || !currentWalletAddress) return null;
+        if (!client) return null;
         const tx = new Transaction();
         tx.moveCall({
             target: `${PACKAGE_ID}::${MODULE}::get_user_badge`,
             arguments: [tx.object(STATE_OBJECT), tx.pure.string(wallet)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx,true);
             // Find the UserBadgeRetrieved event and return parsed JSON
             const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::UserBadgeRetrieved`);
             if (event) return (event.parsedJson as any) ?? null;
@@ -460,7 +449,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getIdeasVotesFromGoal(goalId: number, id: number) {
-        if (!client || !currentWalletAddress) return [];
+        if (!client) return [];
         if (isNaN(goalId) || isNaN(id) || goalId < 0 || id < 0) {
             console.error(`getIdeasVotesFromGoal: invalid parameters goalId=${goalId}, id=${id}`);
             return [];
@@ -474,7 +463,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const result = await client.devInspectTransactionBlock({
                 transactionBlock: tx,
-                sender: currentWalletAddress,
+                sender: currentWalletAddress ?? undefined,
             });
             console.log(result);
             const val = extractDevInspectValue(result);
@@ -588,7 +577,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getIdeasDonation(id: number) {
-        if (!client || !currentWalletAddress) return 0;
+        if (!client) return 0;
         if (isNaN(id) || id < 0) {
             console.error(`getIdeasDonation: invalid id=${id}`);
             return 0;
@@ -601,7 +590,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const result = await client.devInspectTransactionBlock({
                 transactionBlock: tx,
-                sender: currentWalletAddress,
+                sender: currentWalletAddress ?? undefined,
             });
             const val = extractDevInspectValue(result);
             return ParseBigNumber(Number(val ?? 0));
@@ -611,39 +600,71 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getMsgIDs(id: number) {
-        if (!client || !currentWalletAddress) return [];
+        if (!client) return [];
         if (isNaN(id) || id < 0) {
             console.error(`getMsgIDs: invalid id=${id}`);
             return [];
         }
-        const tx = new Transaction();
-        tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::getMsgIDs`,
-            arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
-        });
-        try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
-		
 
+        // Try to read messages table dynamic fields and filter by ideas_id
+        try {
+            const stateData = await fetchStateData();
+            const content = stateData?.data?.content;
+            const fields = content?.fields ?? stateData ?? {};
+            const messagesField = fields?.messages ?? fields?.messages;
+            const tableId = messagesField?.fields?.id?.id || messagesField?.id;
+            if (tableId) {
+                const dynamicFields = await client.getDynamicFields({ parentId: tableId });
+                const outIds: number[] = [];
+                for (const df of dynamicFields.data) {
+                    try {
+                        const obj = await client.getObject({ id: df.objectId || df.objectId || df.objectId, options: { showContent: true } });
+                        const objFields = obj?.data?.content?.fields ?? obj?.content?.fields ?? {};
+                        // message object may store the ideas_id under different keys; attempt common names
+                        const ideasIdRaw = objFields?.ideas_id ?? objFields?.dao_id ?? objFields?.id ?? objFields?.ideasId ?? objFields?.ideas_id?.value;
+                        const msgIdRaw = df?.name ?? df?.objectId ?? obj?.data?.objectId ?? obj?.objectId;
+                        // try to infer numeric id from df.name or parsed fields
+                        const maybeId = Number(df?.name ?? obj?.data?.content?.id ?? obj?.data?.objectId ?? NaN);
+                        if (ideasIdRaw !== undefined && Number(ideasIdRaw) === Number(id)) {
+                            if (!Number.isNaN(maybeId)) outIds.push(Number(maybeId));
+                            else {
+                                // attempt to parse object content id field
+                                const parsedId = Number(objFields?.id ?? objFields?.message_id ?? NaN);
+                                if (!Number.isNaN(parsedId)) outIds.push(parsedId);
+                            }
+                        }
+                    } catch (e) {
+                        // skip problematic entries
+                        continue;
+                    }
+                }
+                return outIds;
+            }
+        } catch (e) {
+            console.warn('getMsgIDs (dynamicFields) failed, falling back to devInspect', e);
+        }
+
+        // Fallback to devInspect-based call
+        try {
+            const tx = new Transaction();
+            tx.moveCall({
+                target: `${PACKAGE_ID}::${MODULE}::getMsgIDs`,
+                arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
+            });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
-            		
-         
             if (Array.isArray(val)) return val.map((x: any) => Number(x));
-            // sometimes it's encoded as a JSON string
             if (typeof val === 'string') {
-                try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed.map((x:any)=>Number(x)); } catch (e) {}
+                try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed.map((x: any) => Number(x)); } catch (e) {}
             }
             return [];
         } catch (e) {
-            console.error(e);
+            console.error('getMsgIDs fallback error', e);
             return [];
         }
     }
     async function getAllMessages(id: number) {
-        if (!client || !currentWalletAddress) return "{}";
+        if (!client) return "{}";
         if (isNaN(id) || id < 0) {
             console.error(`getAllMessages: invalid id=${id}`);
             return "{}";
@@ -654,17 +675,14 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
 
             // Prefer event payload if Move emitted a MessageRetrieved event
             const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::MessageRetrieved`);
             if (event) {
                 try {
                     const parsed = (event.parsedJson as any) ?? {};
-                    return JSON.stringify({ sender: parsed.sender ?? parsed.dao_wallet ?? "", message: parsed.message ?? "", id: parsed.id ?? id, address: parsed.sender ?? parsed.dao_wallet ?? "" });
+                    return JSON.stringify({ sender: parsed.sender ?? parsed.dao_wallet ?? "",ideas_id:parsed.ideas_id??0, message: parsed.message ?? "", id: parsed.id ?? id, address: parsed.sender ?? parsed.dao_wallet ?? "" });
                 } catch (e) {
                     return JSON.stringify({ rawEvent: event });
                 }
@@ -682,34 +700,66 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getReplyIDs(id: number) {
-        if (!client || !currentWalletAddress) return [];
+        if (!client) return [];
         if (isNaN(id) || id < 0) {
             console.error(`getReplyIDs: invalid id=${id}`);
             return [];
         }
-        const tx = new Transaction();
-        tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::getReplyIDs`,
-            arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
-        });
+
+        // Try dynamic fields on replies table
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
+            const stateData = await fetchStateData();
+            const content = stateData?.data?.content;
+            const fields = content?.fields ?? stateData ?? {};
+            const repliesField = fields?.replies ?? fields?.replies;
+            const tableId = repliesField?.fields?.id?.id || repliesField?.id;
+            if (tableId) {
+                const dynamicFields = await client.getDynamicFields({ parentId: tableId });
+                const outIds: number[] = [];
+                for (const df of dynamicFields.data) {
+                    try {
+                        const obj = await client.getObject({ id: df.objectId || df.objectId || df.objectId, options: { showContent: true } });
+                        const objFields = obj?.data?.content?.fields ?? obj?.content?.fields ?? {};
+                        const ideasIdRaw = objFields?.ideas_id ?? objFields?.dao_id ?? objFields?.id ?? objFields?.ideasId ?? objFields?.ideas_id?.value;
+                        const maybeId = Number(df?.name ?? obj?.data?.content?.id ?? NaN);
+                        if (ideasIdRaw !== undefined && Number(ideasIdRaw) === Number(id)) {
+                            if (!Number.isNaN(maybeId)) outIds.push(Number(maybeId));
+                            else {
+                                const parsedId = Number(objFields?.id ?? objFields?.reply_id ?? NaN);
+                                if (!Number.isNaN(parsedId)) outIds.push(parsedId);
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                return outIds;
+            }
+        } catch (e) {
+            console.warn('getReplyIDs (dynamicFields) failed, falling back to devInspect', e);
+        }
+
+        // Fallback to devInspect-based call
+        try {
+            const tx = new Transaction();
+            tx.moveCall({
+                target: `${PACKAGE_ID}::${MODULE}::getReplyIDs`,
+                arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
             });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
             if (Array.isArray(val)) return val.map((x: any) => Number(x));
             if (typeof val === 'string') {
-                try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed.map((x:any)=>Number(x)); } catch (e) {}
+                try { const parsed = JSON.parse(val); if (Array.isArray(parsed)) return parsed.map((x: any) => Number(x)); } catch (e) {}
             }
             return [];
         } catch (e) {
-            console.error(e);
+            console.error('getReplyIDs fallback error', e);
             return [];
         }
     }
     async function getAllReplies(id: number) {
-        if (!client || !currentWalletAddress) return "{}";
+        if (!client) return "{}";
         if (isNaN(id) || id < 0) {
             console.error(`getAllReplies: invalid id=${id}`);
             return "{}";
@@ -720,10 +770,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
 
             // Prefer event payload if Move emitted a ReplyRetrieved event
             const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::ReplyRetrieved`);
@@ -749,17 +796,14 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     async function getGoalIdFromIdeasUri(uri: string) {
-        if (!client || !currentWalletAddress) return 0;
+        if (!client) return 0;
         const tx = new Transaction();
         tx.moveCall({
             target: `${PACKAGE_ID}::${MODULE}::get_goal_id_from_ideas_uri`,
             arguments: [tx.object(STATE_OBJECT), tx.pure.string(uri)],
         });
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
+            const result = await safeDevInspect(tx);
             const val = extractDevInspectValue(result);
             return Number(val ?? 0);
         } catch (e) {
@@ -768,40 +812,33 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
     async function getMessageIds() {
-        if (!client || !currentWalletAddress) return 0;
-        const tx = new Transaction();
-        tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::message_ids`,
-            arguments: [tx.object(STATE_OBJECT)],
-        });
+        // Read message counter from cached state for performance and reliability.
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
-            const val = extractDevInspectValue(result);
-            return Number(val ?? 0);
+            const stateData = await fetchStateData();
+            const content = stateData?.data?.content;
+            const fields = content?.fields ?? stateData ?? {};
+
+            // Try multiple locations where the counter may be stored.
+            const rawCounter = fields?.message_counter ?? fields?.message_counter?.value ?? fields?.messages?.fields?.size ?? fields?.messages?.size;
+            const counter = Number(rawCounter ?? 0);
+            return Number.isNaN(counter) ? 0 : counter;
         } catch (e) {
-            console.error(e);
+            console.error('getMessageIds (fetchStateData) error', e);
             return 0;
         }
     }
     async function getReplyIds() {
-        if (!client || !currentWalletAddress) return 0;
-        const tx = new Transaction();
-        tx.moveCall({
-            target: `${PACKAGE_ID}::${MODULE}::_reply_ids`,
-            arguments: [tx.object(STATE_OBJECT)],
-        });
+        // Read reply counter from cached state instead of devInspect.
         try {
-            const result = await client.devInspectTransactionBlock({
-                transactionBlock: tx,
-                sender: currentWalletAddress,
-            });
-            const val = extractDevInspectValue(result);
-            return Number(val ?? 0);
+            const stateData = await fetchStateData();
+            const content = stateData?.data?.content;
+            const fields = content?.fields ?? stateData ?? {};
+
+            const rawCounter = fields?.reply_counter ?? fields?.reply_counter?.value ?? fields?.replies?.fields?.size ?? fields?.replies?.size;
+            const counter = Number(rawCounter ?? 0);
+            return Number.isNaN(counter) ? 0 : counter;
         } catch (e) {
-            console.error(e);
+            console.error('getReplyIds (fetchStateData) error', e);
             return 0;
         }
     }
