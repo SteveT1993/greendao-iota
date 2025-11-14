@@ -23,7 +23,7 @@ Community is key for many organisations, specially like NGOs and small organisat
 
 That's why we created: GreenDAO: DAO as a service, to Empower Your Community with Trust
 
-GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilisation of a decentralized autonomous organization (DAO) framework. GreenDAO is integrated with the Hedera infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
+GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilisation of a decentralized autonomous organization (DAO) framework. GreenDAO is integrated with the IOTA infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
 
 At its core, GreenDAO serves as a digital infrastructure that facilitates community-led decision-making processes. It leverages blockchain technology to ensure a secure and tamper-resistant environment where participants can engage in transparent governance. By removing intermediaries and centralized authorities, GreenDAO empowers communities to have full control over their operations, enabling them to create a more inclusive and equitable ecosystem.
 

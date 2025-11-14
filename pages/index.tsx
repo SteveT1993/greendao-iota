@@ -36,7 +36,7 @@ export default function Welcome() {
           Maximize community impact through decentralized finance
           </h1>
           <p className="py-4"> 
-          GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilization of a decentralized autonomous organization (DAO) framework. GreenDAO is built on the hedera infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
+          GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilization of a decentralized autonomous organization (DAO) framework. GreenDAO is built on the IOTA infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
           </p>
           <div className="pt-4">
             <Button onClick={letstartCLICK}> Let's create DAO</Button>
@@ -56,7 +56,7 @@ export default function Welcome() {
           </div>
           <h1 className="text-moon-32 font-bold pb-4">  Maximize community impact through decentralized finance</h1>
           <p className="py-4">
-          GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilization of a decentralized autonomous organization (DAO) framework. GreenDAO is built on the hedera infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
+          GreenDAO is an innovative Software-as-a-Service (SaaS) platform designed to empower communities with trust through the utilization of a decentralized autonomous organization (DAO) framework. GreenDAO is built on the IOTA infrastructure with the principles of transparency, collaboration, and fairness. GreenDAO enables communities to govern themselves, make decisions collectively, have a transparency payments process and build trust-based ecosystems. Everything in just a couple clicks. Start your DAO today and give everyone in your community a voice.
        
           </p>
           <div className="pt-4">

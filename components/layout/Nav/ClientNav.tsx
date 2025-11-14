@@ -67,14 +67,13 @@ export default function ClientNav() {
     setInterval(() => {
       if (!isServer()) {
         if (document.readyState === "complete" && !running) {
-          if (!running && !isSigned) {
-            running = true;
+          if (!isSigned) {
             fetchInfo();
           }
         }
       }
     }, 1000);
-  }, []);
+  }, [wallets]);
 
   async function onClickDisConnect() {
     window.localStorage.setItem("loggedin", "");
