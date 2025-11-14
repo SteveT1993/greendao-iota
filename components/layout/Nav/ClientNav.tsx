@@ -58,14 +58,13 @@ export default function ClientNav() {
       try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
     }
+    running = false;
   }
 
   useEffect(() => {
-    if (!running) {
-      if (!isSigned) {
+    if (!running && !isSigned) {
         running = true;
         fetchInfo();
-      }
     }
     if (acc !== "") { running = false; }
   }, [count]);
