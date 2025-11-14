@@ -13,7 +13,6 @@ export default function ClientNav() {
   const { ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress } = useIOTA();
   const [acc, setAcc] = useState('');
   const [accFull, setAccFull] = useState('');
-  const [count, setCount] = useState(0);
   const [isSigned, setSigned] = useState(false);
 
   // dApp Kit hooks (safe: this component is client-only)
@@ -48,33 +47,30 @@ export default function ClientNav() {
           return;
         }
 
-     
+
       } catch (error) {
         console.error(error);
         running = false;
         return;
       }
     } else {
-    
+
       try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
     }
-      setSigned(false);
+    setSigned(false);
     running = false;
   }
 
-  useEffect(() => {
-    if (!running && !isSigned) {
-        running = true;
-        fetchInfo();
-    }
-  }, [count,currentWalletAddress,wallets]);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    setInterval(() => {
       if (!isServer()) {
         if (document.readyState === "complete" && !running) {
-          setCount(c => c + 1);
+          if (!running && !isSigned) {
+            running = true;
+            fetchInfo();
+          }
         }
       }
     }, 1000);
