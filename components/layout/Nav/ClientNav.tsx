@@ -25,6 +25,7 @@ export default function ClientNav() {
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
       try { document.getElementById("installIota")!.style.display = ""; } catch { }
       running = false;
+      setSigned(false);
       return;
     } else {
       try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
@@ -40,10 +41,10 @@ export default function ClientNav() {
           let subbing = window.innerWidth > 500 ? 20 : 10;
           setAcc(addr.toString().substring(0, subbing) + "...");
           setAccFull(addr);
-          if (!isSigned) setSigned(true);
           try { document.getElementById("withoutSign")!.style.display = "none"; } catch { }
           try { document.getElementById("withSign")!.style.display = ""; } catch { }
           running = false;
+          setSigned(true);
           return;
         }
 
@@ -54,10 +55,11 @@ export default function ClientNav() {
         return;
       }
     } else {
-      setSigned(false);
+    
       try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
     }
+      setSigned(false);
     running = false;
   }
 
@@ -66,7 +68,6 @@ export default function ClientNav() {
         running = true;
         fetchInfo();
     }
-    if (acc !== "") { running = false; }
   }, [count]);
 
   useEffect(() => {
