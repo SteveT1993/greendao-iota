@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import Head from "next/head"
-import { useIOTA } from "../../contexts/IOTAContext"
+import { ParseBigNumber, useIOTA } from "../../contexts/IOTAContext"
 import { Header } from "../../components/layout/Header"
 import isServer from "../../components/isServer"
 import styles from "../daos/daos.module.css"
@@ -84,8 +84,8 @@ export default function Profile() {
 			get_ideas_votes_from_goal: async (goalId, id) => {
 				try { return await iota.getIdeasVotesFromGoal(goalId, id) } catch (e) { return [] }
 			},
-			_donations_ids: async () => 0,
-			_donations: async (i) => ({ wallet: "", ideas_id: 0, donation: 0 }),
+			_donations_ids: async () => { try { return await iota.getDonationsIds(); } catch (e) { return 0 } },
+			_donations: async (i) => { try { return await iota.getDonation(Number(i)); } catch (e) { return { wallet: "", ideas_id: 0, donation: 0 } } },
 			_ideas_uris: async (id) => ({ ideas_uri: await iota.getIdeasUri(id) }),
 			_message_ids: async () => { try { return await iota.getMessageIds() } catch (e) { return 0 } },
 			all_messages: async (i) => {
@@ -204,11 +204,11 @@ export default function Profile() {
 			if (donationURI.wallet.toLocaleLowerCase() == address.toLocaleLowerCase()) {
 				let existsIdea = ideasURIS.findIndex(e => e.id == Number(donationURI.ideas_id));
 				if (existsIdea != -1) {
-					ideasURIS[existsIdea].donation += Number(donationURI.donation) / 1e9;
+					ideasURIS[existsIdea].donation += ParseBigNumber(Number(donationURI.donation));
 					continue;
 				}
 				let ideaURI = JSON.parse((await contract._ideas_uris(Number(donationURI.ideas_id))).ideas_uri);
-				ideaURI.donation = Number(donationURI.donation) / 1e9;
+				ideaURI.donation = ParseBigNumber(Number(donationURI.donation));
 				ideaURI.id = Number(donationURI.ideas_id);
 				ideasURIS.push(ideaURI);
 			}
@@ -400,7 +400,7 @@ export default function Profile() {
 						}} onClick={() => { showPanel(0, '#f44336') }} >
 							Summary
 						</button>
-						<button style={{display:'none'}} onClick={() => { showPanel(1, '#4caf50') }} >
+						<button  onClick={() => { showPanel(1, '#4caf50') }} >
 							Activity
 						</button>
 						<button onClick={() => { showPanel(2, '#4caf50') }} >
@@ -644,29 +644,7 @@ export default function Profile() {
 									<>
 										<li>
 											<div className="row" style={{ display: "flex", gap: "0.5rem" }}>
-												<div className="Comment_topicAvatar__zEU3E">
-													<div className="post-avatar">
-														<a
-															className="trigger-user-card main-avatar "
-															aria-hidden="true"
-															tabIndex={-1}
-														>
-															<svg
-																width={45}
-																height={45}
-																xmlns="http://www.w3.org/2000/svg"
-																viewBox="0 0 459 459"
-																style={{ fill: "var(--foreground)" }}
-															>
-																<g>
-																	<g>
-																		<path d="M229.5,0C102.53,0,0,102.845,0,229.5C0,356.301,102.719,459,229.5,459C356.851,459,459,355.815,459,229.5 C459,102.547,356.079,0,229.5,0z M347.601,364.67C314.887,393.338,273.4,409,229.5,409c-43.892,0-85.372-15.657-118.083-44.314 c-4.425-3.876-6.425-9.834-5.245-15.597c11.3-55.195,46.457-98.725,91.209-113.047C174.028,222.218,158,193.817,158,161 c0-46.392,32.012-84,71.5-84c39.488,0,71.5,37.608,71.5,84c0,32.812-16.023,61.209-39.369,75.035 c44.751,14.319,79.909,57.848,91.213,113.038C354.023,354.828,352.019,360.798,347.601,364.67z" />
-																	</g>
-																</g>
-															</svg>
-														</a>
-													</div>
-												</div>
+												
 												<div className="Comment_clearfix__JMJ_m w-full">
 													<div
 														role="heading"

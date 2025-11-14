@@ -181,7 +181,7 @@ export default function DAO() {
 							join_community_block.style.display = "none";
 						}
 					}
-					if ( !daoURIShort.isOwner && !isJoinedTemp ) {
+					if ( daoURIShort.isOwner || !isJoinedTemp ) {
 						if (create_goal_block != null) {
 							create_goal_block.style.display = "none";
 						}

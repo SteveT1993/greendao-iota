@@ -7,7 +7,7 @@ export const MODULE = "dao";
 
 
 // Skipping dependency verification
-// Transaction Digest: GdM1W1ZLzSbygTmMiDBqQTBa2FADfduZwgBwq8bv6ie6
+// Transaction Digest: GiQFNViPQhSLBQGAV1apEToAer4B26vs4CoLDQRLpQuy
 // ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 // │ Transaction Data                                                                                             │
 // ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -18,8 +18,8 @@ export const MODULE = "dao";
 // │ Gas Payment:                                                                                                 │
 // │  ┌──                                                                                                         │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                                    │
-// │  │ Version: 481789966                                                                                        │
-// │  │ Digest: DoXJsYrDVK1E4wMVnArqiRGEugNZXQsQ1eagZDaGVXZo                                                      │
+// │  │ Version: 481789967                                                                                        │
+// │  │ Digest: 5U75iLNB3FPBkeVaRYvvPLydu8cNmmhxuNmWMyEErBPu                                                      │
 // │  └──                                                                                                         │
 // │                                                                                                              │
 // │ Transaction Kind: Programmable                                                                               │
@@ -47,48 +47,48 @@ export const MODULE = "dao";
 // │ ╰─────────────────────────────────────────────────────────────────────────╯                                  │
 // │                                                                                                              │
 // │ Signatures:                                                                                                  │
-// │    Os8io8b31kcHKbQ503fVk4Bk/TFRJF2xl0b84QgdDRqJx9bfUdGdC43L94afqHQ43lcWywNLHZwElUsqkZ5kAg==                  │
+// │    HjRiUIyxf8VzS59CxljOAkNkQky7TwuNVpiwMZAXV34crLKZQNN8sNlaRxBbBLcPtJLEb+dHMcyyK+k2HDRKBA==                  │
 // │                                                                                                              │
 // ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 // ╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
 // │ Transaction Effects                                                                               │
 // ├───────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │ Digest: GdM1W1ZLzSbygTmMiDBqQTBa2FADfduZwgBwq8bv6ie6                                              │
+// │ Digest: GiQFNViPQhSLBQGAV1apEToAer4B26vs4CoLDQRLpQuy                                              │
 // │ Status: Success                                                                                   │
 // │ Executed Epoch: 361                                                                               │
 // │                                                                                                   │
 // │ Created Objects:                                                                                  │
 // │  ┌──                                                                                              │
-// │  │ ID: 0x3da02e56a97e23bcceeb41001018e268fda1d13a59fc563faed276fa7dfe6f59                         │
+// │  │ ID: 0x69c43f5e27b855e464660dd60c9649b123234725c8cd53a24e04e9c9de7e21b7                         │
 // │  │ Owner: Immutable                                                                               │
 // │  │ Version: 1                                                                                     │
-// │  │ Digest: 6TZT2KhMYVzDsxQSYhPHdUEN75tEaweBHfXWvDVziZqS                                           │
+// │  │ Digest: D9wBJ7Ffgvg1gT44gkJrhArZQRoHEStUBfTz4bJbVokX                                           │
 // │  └──                                                                                              │
 // │  ┌──                                                                                              │
-// │  │ ID: 0x91ae1c63c227a6f3f571a350dff11ad49c6ecd490545797502d63d5df96d7711                         │
+// │  │ ID: 0x9854c5a021655ff33c58db843f6e8b3c0f4115c4f076efef883714c5d6323aec                         │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789967                                                                             │
-// │  │ Digest: 8yks5ynwrwxo8YdS8vgoSQpvW9A929juafHftgNXexvs                                           │
+// │  │ Version: 481789968                                                                             │
+// │  │ Digest: 9ZjtJLrRygmqKUNGeHkoPM6Aehoqu31s5xM3iqvZvLi4                                           │
 // │  └──                                                                                              │
 // │  ┌──                                                                                              │
-// │  │ ID: 0xd7b27e025ac1793631104364a6fd5128cea3d4a93d7a456799e899ddd87372c3                         │
-// │  │ Owner: Shared( 481789967 )                                                                     │
-// │  │ Version: 481789967                                                                             │
-// │  │ Digest: AoqT3Zd1ixpX3qweAnqC9Gw4pYMhJnttCCeQCpjuVVkb                                           │
+// │  │ ID: 0x9cea1b220777ff48ad622ade808b249fa06e2e2eeeca20d718bad31e149174f4                         │
+// │  │ Owner: Shared( 481789968 )                                                                     │
+// │  │ Version: 481789968                                                                             │
+// │  │ Digest: CEp1wQ8sMy8Uuhqj9WrKY8wAXaSh1KLrL33fuHfeSS2M                                           │
 // │  └──                                                                                              │
 // │ Mutated Objects:                                                                                  │
 // │  ┌──                                                                                              │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                         │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789967                                                                             │
-// │  │ Digest: 5U75iLNB3FPBkeVaRYvvPLydu8cNmmhxuNmWMyEErBPu                                           │
+// │  │ Version: 481789968                                                                             │
+// │  │ Digest: 69tSjxsGsjUgqbSxe1RbcnEQjYn18hS6zAStfdvuB12v                                           │
 // │  └──                                                                                              │
 // │ Gas Object:                                                                                       │
 // │  ┌──                                                                                              │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                         │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789967                                                                             │
-// │  │ Digest: 5U75iLNB3FPBkeVaRYvvPLydu8cNmmhxuNmWMyEErBPu                                           │
+// │  │ Version: 481789968                                                                             │
+// │  │ Digest: 69tSjxsGsjUgqbSxe1RbcnEQjYn18hS6zAStfdvuB12v                                           │
 // │  └──                                                                                              │
 // │ Gas Cost Summary:                                                                                 │
 // │    Storage Cost: 62206000 NANOS                                                                   │
@@ -98,8 +98,8 @@ export const MODULE = "dao";
 // │    Non-refundable Storage Fee: 0 NANOS                                                            │
 // │                                                                                                   │
 // │ Transaction Dependencies:                                                                         │
-// │    75favNHYqYRwwdpSWpsvS34fhAUaNNsxx8aEF9ZH3yNn                                                   │
 // │    CY14gCcLcVuSMN9Hq7Ya6vEhBAzSzciNw47togWXJAZ8                                                   │
+// │    GdM1W1ZLzSbygTmMiDBqQTBa2FADfduZwgBwq8bv6ie6                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
 // ╭─────────────────────────────╮
 // │ No transaction block events │
@@ -110,20 +110,20 @@ export const MODULE = "dao";
 // ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
 // │ Created Objects:                                                                                 │
 // │  ┌──                                                                                             │
-// │  │ ObjectID: 0x91ae1c63c227a6f3f571a350dff11ad49c6ecd490545797502d63d5df96d7711                  │
+// │  │ ObjectID: 0x9854c5a021655ff33c58db843f6e8b3c0f4115c4f076efef883714c5d6323aec                  │
 // │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 ) │
 // │  │ ObjectType: 0x2::package::UpgradeCap                                                          │
-// │  │ Version: 481789967                                                                            │
-// │  │ Digest: 8yks5ynwrwxo8YdS8vgoSQpvW9A929juafHftgNXexvs                                          │
+// │  │ Version: 481789968                                                                            │
+// │  │ Digest: 9ZjtJLrRygmqKUNGeHkoPM6Aehoqu31s5xM3iqvZvLi4                                          │
 // │  └──                                                                                             │
 // │  ┌──                                                                                             │
-// │  │ ObjectID: 0xd7b27e025ac1793631104364a6fd5128cea3d4a93d7a456799e899ddd87372c3                  │
+// │  │ ObjectID: 0x9cea1b220777ff48ad622ade808b249fa06e2e2eeeca20d718bad31e149174f4                  │
 // │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
-// │  │ Owner: Shared( 481789967 )                                                                    │
-// │  │ ObjectType: 0x3da02e56a97e23bcceeb41001018e268fda1d13a59fc563faed276fa7dfe6f59::dao::State    │
-// │  │ Version: 481789967                                                                            │
-// │  │ Digest: AoqT3Zd1ixpX3qweAnqC9Gw4pYMhJnttCCeQCpjuVVkb                                          │
+// │  │ Owner: Shared( 481789968 )                                                                    │
+// │  │ ObjectType: 0x69c43f5e27b855e464660dd60c9649b123234725c8cd53a24e04e9c9de7e21b7::dao::State    │
+// │  │ Version: 481789968                                                                            │
+// │  │ Digest: CEp1wQ8sMy8Uuhqj9WrKY8wAXaSh1KLrL33fuHfeSS2M                                          │
 // │  └──                                                                                             │
 // │ Mutated Objects:                                                                                 │
 // │  ┌──                                                                                             │
@@ -131,14 +131,14 @@ export const MODULE = "dao";
 // │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 ) │
 // │  │ ObjectType: 0x2::coin::Coin<0x2::iota::IOTA>                                                  │
-// │  │ Version: 481789967                                                                            │
-// │  │ Digest: 5U75iLNB3FPBkeVaRYvvPLydu8cNmmhxuNmWMyEErBPu                                          │
+// │  │ Version: 481789968                                                                            │
+// │  │ Digest: 69tSjxsGsjUgqbSxe1RbcnEQjYn18hS6zAStfdvuB12v                                          │
 // │  └──                                                                                             │
 // │ Published Objects:                                                                               │
 // │  ┌──                                                                                             │
-// │  │ PackageID: 0x3da02e56a97e23bcceeb41001018e268fda1d13a59fc563faed276fa7dfe6f59                 │
+// │  │ PackageID: 0x69c43f5e27b855e464660dd60c9649b123234725c8cd53a24e04e9c9de7e21b7                 │
 // │  │ Version: 1                                                                                    │
-// │  │ Digest: 6TZT2KhMYVzDsxQSYhPHdUEN75tEaweBHfXWvDVziZqS                                          │
+// │  │ Digest: D9wBJ7Ffgvg1gT44gkJrhArZQRoHEStUBfTz4bJbVokX                                          │
 // │  │ Modules: dao                                                                                  │
 // │  └──                                                                                             │
 // ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯

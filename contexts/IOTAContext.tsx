@@ -40,9 +40,11 @@ const IOTAContext = createContext({
     getGoalIdFromIdeasUri: async (uri: string) => 0,
     getIdeasVotesFromGoal: async (goalId: number, id: number) => [],
     getIdeasDonation: async (id: number) => 0,
+    getDonationsIds: async () => 0,
+    getDonation: async (id: number) => ({ wallet: "", ideas_id: 0, donation: 0 }),
     getMsgIDs: async (id: number) => [],
     getAllMessages: async (id: number) => "",
-    getReplyIDs: async (id: number) => [],
+    getReplyByIdeaID: async (id: number) => [],
     getAllReplies: async (id: number) => "",
     getMessageIds: async () => 0,
     getReplyIds: async () => 0
@@ -438,7 +440,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             arguments: [tx.object(STATE_OBJECT), tx.pure.string(wallet)],
         });
         try {
-            const result = await safeDevInspect(tx,true);
+            const result = await safeDevInspect(tx);
             // Find the UserBadgeRetrieved event and return parsed JSON
             const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::UserBadgeRetrieved`);
             if (event) return (event.parsedJson as any) ?? null;
@@ -627,6 +629,49 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return [];
         }
     }
+    async function getDonationsIds() {
+        try {
+            const stateData = await fetchStateData();
+            const content = stateData?.data?.content;
+            const fields = (content as any)?.fields ?? stateData ?? {};
+            const rawCounter = fields?.donation_counter ?? fields?.donation_counter?.value ?? fields?.donations?.fields?.size ?? fields?.donations?.size;
+            const counter = Number(rawCounter ?? 0);
+            return Number.isNaN(counter) ? 0 : counter;
+        } catch (e) {
+            console.error('getDonationsIds (fetchStateData) error', e);
+            return 0;
+        }
+    }
+
+    async function getDonation(id: number) {
+        if (!client) return { wallet: "", ideas_id: 0, donation: 0 };
+        if (isNaN(id) || id < 0) {
+            console.error(`getDonation: invalid id=${id}`);
+            return { wallet: "", ideas_id: 0, donation: 0 };
+        }
+        const tx = new Transaction();
+        tx.moveCall({
+            target: `${PACKAGE_ID}::${MODULE}::donations`,
+            arguments: [tx.object(STATE_OBJECT), tx.pure.u64(id)],
+        });
+        try {
+            const result = await safeDevInspect(tx);
+            // Prefer event payload if Move emitted a DonationRetrieved event
+            const event = result.events?.find((e: any) => e.type === `${PACKAGE_ID}::dao::DonationRetrieved`);
+            if (event) {
+                try { return (event.parsedJson as any) ?? { wallet: "", ideas_id: 0, donation: 0 }; } catch (e) { /* continue */ }
+            }
+            const val = extractDevInspectValue(result);
+            if (!val && val !== 0) return { wallet: "", ideas_id: 0, donation: 0 };
+            if (typeof val === 'string') {
+                try { return JSON.parse(val); } catch (e) { return { raw: val } as any }
+            }
+            return val;
+        } catch (e) {
+            console.error('getDonation error', e);
+            return { wallet: "", ideas_id: 0, donation: 0 };
+        }
+    }
     async function getAllMessages(id: number) {
         if (!client) return "{}";
         if (isNaN(id) || id < 0) {
@@ -663,10 +708,10 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return "{}";
         }
     }
-    async function getReplyIDs(id: number) {
+    async function getReplyByIdeaID(id: number) {
         if (!client) return [];
         if (isNaN(id) || id < 0) {
-            console.error(`getReplyIDs: invalid id=${id}`);
+            console.error(`getReplyByIdeaID: invalid id=${id}`);
             return [];
         }
 
@@ -674,24 +719,21 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const stateData = await fetchStateData();
             const content = stateData?.data?.content;
-            const fields = content?.fields ?? stateData ?? {};
+            const fields = (content as any)?.fields ?? stateData ?? {};
             const repliesField = fields?.replies ?? fields?.replies;
             const tableId = repliesField?.fields?.id?.id || repliesField?.id;
             if (tableId) {
                 const dynamicFields = await client.getDynamicFields({ parentId: tableId });
-                const outIds: number[] = [];
+                const outIds= [];
                 for (const df of dynamicFields.data) {
                     try {
                         const obj = await client.getObject({ id: df.objectId || df.objectId || df.objectId, options: { showContent: true } });
-                        const objFields = obj?.data?.content?.fields ?? obj?.content?.fields ?? {};
+                        const objFields = (obj as any)?.data?.content?.fields?.value?.fields ?? {};
                         const ideasIdRaw = objFields?.ideas_id ?? objFields?.dao_id ?? objFields?.id ?? objFields?.ideasId ?? objFields?.ideas_id?.value;
-                        const maybeId = Number(df?.name ?? obj?.data?.content?.id ?? NaN);
+                  
+                       
                         if (ideasIdRaw !== undefined && Number(ideasIdRaw) === Number(id)) {
-                            if (!Number.isNaN(maybeId)) outIds.push(Number(maybeId));
-                            else {
-                                const parsedId = Number(objFields?.id ?? objFields?.reply_id ?? NaN);
-                                if (!Number.isNaN(parsedId)) outIds.push(parsedId);
-                            }
+                            outIds.push(objFields);
                         }
                     } catch (e) {
                         continue;
@@ -780,7 +822,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const stateData = await fetchStateData();
             const content = stateData?.data?.content;
-            const fields = content?.fields ?? stateData ?? {};
+            const fields = (content as any)?.fields ?? stateData ?? {};
 
             // Try multiple locations where the counter may be stored.
             const rawCounter = fields?.message_counter ?? fields?.message_counter?.value ?? fields?.messages?.fields?.size ?? fields?.messages?.size;
@@ -796,7 +838,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const stateData = await fetchStateData();
             const content = stateData?.data?.content;
-            const fields = content?.fields ?? stateData ?? {};
+            const fields = (content as any)?.fields ?? stateData ?? {};
 
             const rawCounter = fields?.reply_counter ?? fields?.reply_counter?.value ?? fields?.replies?.fields?.size ?? fields?.replies?.size;
             const counter = Number(rawCounter ?? 0);
@@ -833,7 +875,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
     }
-    return <IOTAContext.Provider value={{ getAllDaos,getGoalsForDao, ParseBigNumber, WrapBigNumber, Balance:_Balance, currentWalletAddress, sendTransaction, sendNative, daos, queryEvent, sleep, contract: client, getGoalUri, getAllIdeasByGoalId, getIdeasIdByIdeasUri, getIdeasUri, getGoalIdFromIdeasUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyIDs, getAllReplies, getMessageIds, getReplyIds, getUserBadge }}>
+    return <IOTAContext.Provider value={{ getAllDaos,getGoalsForDao, ParseBigNumber, WrapBigNumber, Balance:_Balance, currentWalletAddress, sendTransaction, sendNative, daos, queryEvent, sleep, contract: client, getGoalUri, getAllIdeasByGoalId, getIdeasIdByIdeasUri, getIdeasUri, getGoalIdFromIdeasUri, getIdeasVotesFromGoal, getIdeasDonation, getDonationsIds, getDonation, getMsgIDs, getAllMessages, getReplyByIdeaID, getAllReplies, getMessageIds, getReplyIds, getUserBadge }}>
         {children}
     </IOTAContext.Provider>
 };

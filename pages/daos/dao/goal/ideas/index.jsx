@@ -29,7 +29,7 @@ export default function GrantIdeas() {
 	const [IdeasURI, setIdeasURI] = useState({ ideasId: "", Title: "", Description: "",Referenda:0, wallet: "", logo: "", End_Date: "", voted: 0,delegAmount:0,delegDated:"", isVoted: true, isOwner: true, allfiles: [] });
 	const [DonatemodalShow, setDonatemodalShow] = useState(false);
 	const [AccountAddress, setAccountAddress] = useState("");
-	const { contract, currentWalletAddress: signerAddress, sendTransaction, getIdeasUri, getGoalIdFromIdeasUri, getGoalUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyIDs, getAllReplies, getMessageIds, getReplyIds } = useIOTA();
+	const { contract, currentWalletAddress: signerAddress, sendTransaction, getIdeasUri, getGoalIdFromIdeasUri, getGoalUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyByIdeaID, getAllReplies, getMessageIds, getReplyIds } = useIOTA();
 	const [Comment, CommentInput, setComment] = UseFormTextArea({
 		defaultValue: "",
 		placeholder: "Your comment",
@@ -175,6 +175,7 @@ export default function GrantIdeas() {
 
 				setimageList(object.properties.allFiles);
 
+						const totalReplies = await getReplyByIdeaID(Number(id));
 				// Comments and Replies: build locally then set once
 				const totalComments = await getMsgIDs(Number(id));
 		
@@ -188,6 +189,8 @@ export default function GrantIdeas() {
 					let commentInfo = await getAllMessages(commentId);
 				
 					try {
+						console.log(totalReplies);
+
 						const outer = JSON.parse(commentInfo);
 						let inner = null;
 						try { inner = JSON.parse(outer.message); } catch (e) { inner = null; }
@@ -197,18 +200,19 @@ export default function GrantIdeas() {
 						const cid = outer.id ?? (inner && inner.id) ?? commentId;
 						let newComment = { address, message: messageText, date, id: cid, replies: [] };
 
-						const totalReplies = await getReplyIDs(Number(commentId));
-						for (let ri = 0; ri < Object.keys(totalReplies).length; ri++) {
-							const replyId = Number(totalReplies[ri]);
-							if (isNaN(replyId) || replyId < 0) { console.error("Invalid replyId:", replyId); continue; }
-							let replyInfo = await getAllReplies(replyId);
+						for (let ri = 0; ri < (totalReplies).length; ri++) {
+							const replyId = (totalReplies[ri]).reply_id;
+							if (totalReplies[ri].message_id != commentId.toString())continue;
+
+							
+								const outerR = (totalReplies[ri]);
+
 							try {
-								const outerR = JSON.parse(replyInfo);
 								let innerR = null; try { innerR = JSON.parse(outerR.message); } catch (e) { innerR = null; }
 								const replyMessage = (innerR && innerR.message) ? innerR.message : (outerR.message ?? "");
 								const replyAddress = outerR.sender ?? outerR.address ?? (innerR && innerR.address) ? innerR.address : "";
 								const replyDate = (innerR && innerR.date) ? innerR.date : (outerR.date ?? "");
-								const rid = outerR.id ?? (innerR && innerR.id) ?? replyId;
+								const rid = replyId;
 								newComment.replies.push({ id: rid, message: replyMessage, address: replyAddress, date: replyDate });
 							} catch (parseErr) { console.error("Failed to parse replyInfo:", replyInfo, parseErr); }
 						}
