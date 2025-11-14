@@ -4,17 +4,20 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { Header } from "../components/layout/Header";
 import styles from "./Home.module.scss";
+import { useWallets, useConnectWallet, useCurrentAccount } from "@iota/dapp-kit";
 
 declare let window: any;
 export default function Welcome() {
+    const wallets = useWallets();
+    const {address} = useCurrentAccount();
+
   const router = useRouter();
   function letstartCLICK() {
-    if (typeof window.ethereum === "undefined") {
-      window.open(
-        "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
-        "_blank"
-      );
-    } else  if (window?.ethereum?.selectedAddress?.toLocaleLowerCase().toString()  == null || window.localStorage.getItem("login-type") === "metamask") {
+     if (!wallets || wallets.length === 0) {
+      window.open("https://chromewebstore.google.com/detail/iota-wallet/iidjkmdceolghepehaaddojmnjnkkija", "_blank");
+      return;
+    }
+      if (address  == null) {
       router.push("/login?[/daos]");
     } else {
       router.push("/daos");

@@ -62,7 +62,7 @@ export default function ClientNav() {
 
   useEffect(() => {
     if (!running) {
-      if (!isSigned || acc === "") {
+      if (!isSigned) {
         running = true;
         fetchInfo();
       }
