@@ -6,10 +6,6 @@
 
 # GreenDAO
 
-## Track
-Intermediate Track - Sustainable and Green Finance
-
-
 ## Introduction
 
 **GreenDAO:** GreenDAO - Maximize community impact through decentralized finance
@@ -36,9 +32,9 @@ GreenDAO offers a user-friendly interface that simplifies the management of DAOs
 By utilising GreenDAO, communities can unlock numerous benefits. They can harness the collective intelligence and diverse perspectives of their members, leading to better decision-making and innovation. Furthermore, GreenDAO promotes inclusivity by providing equal opportunities for participation and influence, irrespective of geographical location or social status. This democratization of power fosters trust, engagement, and a shared sense of purpose among community members.
 a
 ## Technical Description
-In GreenDAO, we have integrated Metamask wallet. We have used solidity language for smart contract. And then we are using hardhat to deploy to the hedera testnet network. Using ether.js we are retrieving and sending transactions. We have integrated grape js. Which allow users to customize their pages like wix.com. The code is written in the next js. 
-1. Smart Contract is located in [Soldiity code](./contracts/contracts/GreenDAO.sol). It is deployed with Hardhat to Hedera Testnet network. 
-2. [Ether Contract Instance](./services/ERC20Singleton.js) and [Use Contract](./services/useContract.js)
+In GreenDAO, we have integrated IOTA wallet. We have used move language for smart contract. And then we are using iota client publish to deploy to the iota testnet network. Using iota sdk we are retrieving and sending transactions. We have integrated grape js. Which allow users to customize their pages like wix.com. The code is written in the next js. 
+1. Smart Contract is located in [Move code](./iota/contracts/GreenDAO/sources/greendao.move). It is deployed to Iota Testnet network. 
+2. [IOTA Context](./contexts/IOTAContext.tsx) and [Network Config](./contexts/networkConfig.ts)
 3. Implementing it in all [pages](./pages) 
 
 
@@ -50,8 +46,8 @@ In GreenDAO, we have integrated Metamask wallet. We have used solidity language 
 
 
 
-**Next Steps integration with Hedera:**
-1. Integrate Hashpack wallet
+**Next Steps integration with IOTA:**
+1. Integrate IOTA wallet
 2. Custom subdomain for each dao
 3. Feed section in DAO page
 4. Members list in DAO page
@@ -59,15 +55,15 @@ In GreenDAO, we have integrated Metamask wallet. We have used solidity language 
 6. Deploy to Mainnet
 
 
-## Architecture
-Hedera, Testnet, Solidity, Metamask, grape js, Web3, Ether js, Next js, TypeScript, Javascript, CSS, SCSS
-![](./Architecture.jpg)
+## Tech used
+IOTA, Testnet, move, iota wallet, grape js, Next js, TypeScript, Javascript, CSS, SCSS
+
 
 
 
 ## Team info
-1. **Zakir Hossain:** Senior Web3 developer, blockchain expert
-2. **Igor:** Design, UX/UI
+1. **Zakir Hossain:** Senior full stack developer, blockchain expert
+
 
 ## Demo materials
 
@@ -78,7 +74,7 @@ Hedera, Testnet, Solidity, Metamask, grape js, Web3, Ether js, Next js, TypeScri
 For more information, please see the presentation: [GreenDAO Presentation](https://www.canva.com/design/DAGSWTEWA98/J3qeVZo0oGd-xyEQX8aJ_w/edit?utm_content=DAGSW)
 
 ### Demo Link (product is live)
-[Visit GreenDAO](https://greendao-hedera.vercel.app/)
+[Visit GreenDAO](https://greendao-iota.vercel.app/)
 
 
 
@@ -88,7 +84,7 @@ For more information, please see the presentation: [GreenDAO Presentation](https
 First, run :
 
 ```bash
-npx yarn
+npm i
 ```
 
 
@@ -96,7 +92,5 @@ Then, run the development server:
 
 ```bash
 npm run dev
-# or
-npx yarn dev
 ```
 

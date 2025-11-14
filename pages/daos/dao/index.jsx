@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 
 
 import Head from "next/head"
-import useContract from "../../../services/useContract"
+
 import { Header } from "../../../components/layout/Header"
 import isServer from "../../../components/isServer"
 import styles from "../daos.module.css"
