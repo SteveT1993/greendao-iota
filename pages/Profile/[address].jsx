@@ -263,8 +263,6 @@ export default function Profile() {
 				MessagesIdeasURIS.push(ideaURI);
 			}
 		}
-		console.log(allMessages);
-
 		let _reply_ids = await contract._reply_ids();
 		for (let i = 0; i < _reply_ids; i++) {
 			let repliesURI = null;
@@ -379,7 +377,7 @@ export default function Profile() {
 									</g>
 								</svg>
 							</a>
-							<a href={`https://hashscan.io/testnet/account/${address}`} rel="noreferrer" target="_blank">
+							<a href={`https://explorer.iota.org/address/${address}`} rel="noreferrer" target="_blank">
 								<h1 className="font-bold" style={{ color: 'var(--title-a-text)', width: "78%" }} >
 									{address}
 								</h1>
@@ -421,22 +419,7 @@ export default function Profile() {
 							<Loader
 								element={
 									<ul>
-										<li className="stats-topic-count linked-stat">
-											<a
-												id="ember1267"
-												className="ember-view"
-
-											>
-												<div id="ember1268" className="user-stat ember-view">
-													<span className="value">
-														<span className="number">{TotalCommented}</span>
-													</span>
-													<span className="label">
-														total commented
-													</span>
-												</div>
-											</a>
-										</li>
+									
 										<li className="stats-topic-count linked-stat">
 											<a
 												id="ember1267"

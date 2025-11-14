@@ -70,11 +70,22 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
 
         // Build and send an IOTA Move transaction calling join_community
         try {
+            	const amt = Number(amount.value);
+			if (!(amt > 0)) throw new Error('Invalid amount');
+			const result = await sendNative(address, amt);
+			let link = "";
+			try { link = result?.digest ?? result?.transactionBlock?.digest ?? result?.txDigest ?? JSON.stringify(result); } catch (e) { link = String(result); }
+			setTransaction({ link });
+			ShowAlert("success", "Transfer Successful: " + (link ? link : ""));
+
+
+			ShowAlert("pending", "Saving Information .....");
+		
             const tx = new Transaction();
             const joinAddress = (currentWalletAddress)?.toString().toLocaleLowerCase();
             await sendTransaction(tx, "join_community", [tx.pure.u64(Number(dao_id)), tx.pure.string(joinAddress)]);
 
-            await sleep(2000);
+            await sleep(8000);
 
             ShowAlert("success", "Purchased Subscription successfully!");
             // best-effort refresh of on-chain data

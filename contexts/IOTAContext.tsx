@@ -58,7 +58,7 @@ export function sleep(ms: number) {
 let running = false;
 
 export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [Balance, setBalance] = useState("");
+    const [_Balance, setBalance] = useState("");
     const [daos, setDaos] = useState([]);
     const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
@@ -136,8 +136,8 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     useEffect(() => {
 
-        if (balanceData && balanceData[0].totalBalance !== undefined) {
-            setBalance(ParseBigNumber(balanceData[0].totalBalance) + " IOTA");
+        if (balanceData && balanceData.find(item=>item.coinType == "0x2::iota::IOTA").totalBalance !== undefined) {
+            setBalance(ParseBigNumber(balanceData.find(item=>item.coinType == "0x2::iota::IOTA").totalBalance) + " IOTA");
         } else {
             setBalance("Loading...");
         }
@@ -606,43 +606,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return [];
         }
 
-        // Try to read messages table dynamic fields and filter by ideas_id
-        try {
-            const stateData = await fetchStateData();
-            const content = stateData?.data?.content;
-            const fields = content?.fields ?? stateData ?? {};
-            const messagesField = fields?.messages ?? fields?.messages;
-            const tableId = messagesField?.fields?.id?.id || messagesField?.id;
-            if (tableId) {
-                const dynamicFields = await client.getDynamicFields({ parentId: tableId });
-                const outIds: number[] = [];
-                for (const df of dynamicFields.data) {
-                    try {
-                        const obj = await client.getObject({ id: df.objectId || df.objectId || df.objectId, options: { showContent: true } });
-                        const objFields = obj?.data?.content?.fields ?? obj?.content?.fields ?? {};
-                        // message object may store the ideas_id under different keys; attempt common names
-                        const ideasIdRaw = objFields?.ideas_id ?? objFields?.dao_id ?? objFields?.id ?? objFields?.ideasId ?? objFields?.ideas_id?.value;
-                        const msgIdRaw = df?.name ?? df?.objectId ?? obj?.data?.objectId ?? obj?.objectId;
-                        // try to infer numeric id from df.name or parsed fields
-                        const maybeId = Number(df?.name ?? obj?.data?.content?.id ?? obj?.data?.objectId ?? NaN);
-                        if (ideasIdRaw !== undefined && Number(ideasIdRaw) === Number(id)) {
-                            if (!Number.isNaN(maybeId)) outIds.push(Number(maybeId));
-                            else {
-                                // attempt to parse object content id field
-                                const parsedId = Number(objFields?.id ?? objFields?.message_id ?? NaN);
-                                if (!Number.isNaN(parsedId)) outIds.push(parsedId);
-                            }
-                        }
-                    } catch (e) {
-                        // skip problematic entries
-                        continue;
-                    }
-                }
-                return outIds;
-            }
-        } catch (e) {
-            console.warn('getMsgIDs (dynamicFields) failed, falling back to devInspect', e);
-        }
+ 
 
         // Fallback to devInspect-based call
         try {
@@ -869,7 +833,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
     }
-    return <IOTAContext.Provider value={{ getAllDaos,getGoalsForDao, ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress, sendTransaction, sendNative, daos, queryEvent, sleep, contract: client, getGoalUri, getAllIdeasByGoalId, getIdeasIdByIdeasUri, getIdeasUri, getGoalIdFromIdeasUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyIDs, getAllReplies, getMessageIds, getReplyIds, getUserBadge }}>
+    return <IOTAContext.Provider value={{ getAllDaos,getGoalsForDao, ParseBigNumber, WrapBigNumber, Balance:_Balance, currentWalletAddress, sendTransaction, sendNative, daos, queryEvent, sleep, contract: client, getGoalUri, getAllIdeasByGoalId, getIdeasIdByIdeasUri, getIdeasUri, getGoalIdFromIdeasUri, getIdeasVotesFromGoal, getIdeasDonation, getMsgIDs, getAllMessages, getReplyIDs, getAllReplies, getMessageIds, getReplyIds, getUserBadge }}>
         {children}
     </IOTAContext.Provider>
 };

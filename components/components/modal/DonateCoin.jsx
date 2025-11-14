@@ -22,7 +22,7 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 	const [Coin, setCoin] = useState("IOTA");
 	const [isLoading, setisLoading] = useState(false);
 	const [isSent, setisSent] = useState(false);
-	const { sendTransaction, sendNative, currentWalletAddress, Balance: IotaBalance,WrapBigNumber } = useIOTA();
+	const { sendTransaction, sendNative, currentWalletAddress, Balance: IotaBalance, WrapBigNumber } = useIOTA();
 	let alertBox = null;
 	const [transaction, setTransaction] = useState({
 		link: "",
@@ -63,30 +63,30 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 		setisLoading(true);
 
 		try {
-		ShowAlert("pending","Transferring " + amount.value + " IOTA .....");
+			ShowAlert("pending", "Transferring " + amount.value + " IOTA .....");
 
-	const amt = Number(amount.value);
-				if (!(amt > 0)) throw new Error('Invalid amount');
-				const result = await sendNative(address, amt);
-				let link = "";
-				try { link = result?.digest ?? result?.transactionBlock?.digest ?? result?.txDigest ?? JSON.stringify(result); } catch (e) { link = String(result); }
-				setTransaction({ link });
-				ShowAlert("success", "Transfer Successful: " + (link ? link : ""));
+			const amt = Number(amount.value);
+			if (!(amt > 0)) throw new Error('Invalid amount');
+			const result = await sendNative(address, amt);
+			let link = "";
+			try { link = result?.digest ?? result?.transactionBlock?.digest ?? result?.txDigest ?? JSON.stringify(result); } catch (e) { link = String(result); }
+			setTransaction({ link });
+			ShowAlert("success", "Transfer Successful: " + (link ? link : ""));
 
 
-				ShowAlert("pending","Saving Information .....");
-				// default: call Move function to record donation on-chain
-				const tx = new Transaction();
-				const amountBase = tx.pure.u64(WrapBigNumber(Number(amount.value)));
-				const result2 = await sendTransaction(tx, "add_donation", [tx.pure.u64(Number(ideasid)), amountBase, tx.pure.string(CurrentAddress || currentWalletAddress || "")]);
-				let link2 = "";
-				try { link2 = result2?.digest ?? result2?.transactionBlock?.digest ?? result2?.txDigest ?? JSON.stringify(result2); } catch (e) { link2 = String(result2); }
-				setTransaction({ link2 });
-				ShowAlert("success","Donate Successful: " + (link2 ? link2 : ""));
-				LoadData();
-				setisLoading(false);
-				setisSent(true);
-			
+			ShowAlert("pending", "Saving Information .....");
+			// default: call Move function to record donation on-chain
+			const tx = new Transaction();
+			const amountBase = tx.pure.u64(WrapBigNumber(Number(amount.value)));
+			const result2 = await sendTransaction(tx, "add_donation", [tx.pure.u64(Number(ideasid)), amountBase, tx.pure.string(CurrentAddress || currentWalletAddress || "")]);
+			let link2 = "";
+			try { link2 = result2?.digest ?? result2?.transactionBlock?.digest ?? result2?.txDigest ?? JSON.stringify(result2); } catch (e) { link2 = String(result2); }
+			setTransaction({ link2 });
+			ShowAlert("success", "Donate Successful: " + (link2 ? link2 : ""));
+			LoadData();
+			setisLoading(false);
+			setisSent(true);
+
 		} catch (err) {
 			console.error(err);
 			ShowAlert("error", "Transaction failed: " + (err?.message || err));
@@ -145,14 +145,14 @@ export default function DonateCoin({ ideasid, show, onHide, address }) {
 
 
 						<StyledPaper sx={{ my: 1, mx: "auto", p: 2 }}>
-							<div variant="standard" style={{wordBreak: 'break-all'}}>
+							<div variant="standard" style={{ wordBreak: 'break-all' }}>
 								<InputLabel>Target Address</InputLabel>
 								<span>{address}</span>
 							</div>
 						</StyledPaper>
 
 						<StyledPaper sx={{ my: 1, mx: "auto", p: 2 }}>
-							<div variant="standard" style={{wordBreak: 'break-all'}}>
+							<div variant="standard" style={{ wordBreak: 'break-all' }}>
 								<InputLabel>From Address</InputLabel>
 								<span>{CurrentAddress} (Your)</span>
 							</div>

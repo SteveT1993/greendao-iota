@@ -81,7 +81,7 @@ export default function GrantIdeas() {
 
 	useEffect(() => {
 		fetchContractData();
-	}, [contract]);
+	}, [contract,signerAddress]);
 
 	useEffect(() => {
 		function SetReadSettings(){
@@ -111,12 +111,24 @@ export default function GrantIdeas() {
 		goalIdFromUrl = router.query.goalId;
 		id = router.query.ideaId;
 
-	}
+	}else if (typeof window !== 'undefined') {
+        const regex = /\[(.*)\]/g
+        const str = decodeURIComponent(window.location.search)
+        let m
+        let parsed = ""
+        while ((m = regex.exec(str)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++
+            }
+            parsed = m[1]
+        }
+        if (parsed) id = (Number(parsed))
+    }
 
 	async function fetchContractData() {
 		running = true;
 		try {
-			if (contract ) {
+			if (contract && signerAddress && id !== "") {
 			setIdeasId(id);
 			const ideaURI = await getIdeasUri(Number(id)); //Getting ideas uri
 			if (ideaURI == "") {running =false; return;}
@@ -174,6 +186,7 @@ export default function GrantIdeas() {
 						continue;
 					}
 					let commentInfo = await getAllMessages(commentId);
+				
 					try {
 						const outer = JSON.parse(commentInfo);
 						let inner = null;

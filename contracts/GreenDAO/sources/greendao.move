@@ -604,6 +604,20 @@
 		});
 	}
 
+	public fun donations_ids(state: &State): u64 {
+		state.donation_counter
+	}
+
+	public fun donations(state: &State, id: u64) {
+		let d = table::borrow(&state.donations, id);
+		event::emit(DonationRetrieved {
+			id,
+			ideas_id: d.ideas_id,
+			wallet: d.wallet,
+			donation: d.donation
+		});
+	}
+
 	/// Get Join by id
 	public fun get_join(state: &State, id: u64) {
 		let j = table::borrow(&state.joins, id);
