@@ -19,18 +19,9 @@ export default function ClientNav() {
   const wallets = useWallets();
 
   async function fetchInfo() {
-    if (!wallets || wallets.length === 0) {
-      try { document.getElementById("withoutSign")!.style.display = "none"; } catch { }
-      try { document.getElementById("withSign")!.style.display = "none"; } catch { }
-      try { document.getElementById("installIota")!.style.display = ""; } catch { }
-      running = false;
-      setSigned(false);
-      return;
-    } else {
-      try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
+        try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
       try { document.getElementById("installIota")!.style.display = "none"; } catch { }
-    }
 
     if (window.localStorage.getItem("login-type") === "iota") {
       try {
@@ -68,12 +59,13 @@ export default function ClientNav() {
       if (!isServer()) {
         if (document.readyState === "complete" && !running) {
           if (!isSigned) {
+            running = true;
             fetchInfo();
           }
         }
       }
-    }, 1000);
-  }, [wallets]);
+    }, 2000);
+  }, [wallets,currentWalletAddress,Balance]);
 
   async function onClickDisConnect() {
     window.localStorage.setItem("loggedin", "");

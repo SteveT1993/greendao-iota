@@ -146,8 +146,7 @@ export const IOTAProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [balanceData]);
 
     useEffect(() => {
-        if (!running && currentWalletAddress === null) {
-            running = true;
+        if ( currentWalletAddress === null) {
             fetchInfo();
         }
     }, [wallets, currentAccount]);
