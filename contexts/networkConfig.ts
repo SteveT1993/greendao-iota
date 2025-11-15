@@ -1,12 +1,11 @@
 
-export const PACKAGE_ID = "0x6654274feb9d713b1f295bf8f59260e093e07f0ef06d088fce908dcb59182a8d";
-export const STATE_OBJECT = "0x593f383134f8a2f80009e0e60867a0ffdeafeb47bcfa38e31c4456f2c53d9316";
+export const PACKAGE_ID = "0x2b78041af4990d5b538fdf760bae7d27fb0d7a92a7cb596049c0dc055bb37bde";
+export const STATE_OBJECT = "0x3bc7b2ddc80f53e0bd3a5079b65dd418348f5a26a2e813be7300968bcbe0107f";
 export const MODULE = "dao";
 
 
-
 // Skipping dependency verification
-// Transaction Digest: BNbtgzKcM4h6Ay99EcUpnZLaz9CPVyV7pfYEFByJXgAG
+// Transaction Digest: 8NyN5YVWZ2Wh4DEgL3BiQ8ihh37XpXAZJ5cnbT8JEp6m
 // ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 // │ Transaction Data                                                                                             │
 // ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -17,8 +16,8 @@ export const MODULE = "dao";
 // │ Gas Payment:                                                                                                 │
 // │  ┌──                                                                                                         │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                                    │
-// │  │ Version: 481789968                                                                                        │
-// │  │ Digest: 69tSjxsGsjUgqbSxe1RbcnEQjYn18hS6zAStfdvuB12v                                                      │
+// │  │ Version: 481789969                                                                                        │
+// │  │ Digest: BC4MjzW6sAhfSeUe9g7CzvtAQiFBEsjVb1FrUeHzBkc2                                                      │
 // │  └──                                                                                                         │
 // │                                                                                                              │
 // │ Transaction Kind: Programmable                                                                               │
@@ -46,48 +45,48 @@ export const MODULE = "dao";
 // │ ╰─────────────────────────────────────────────────────────────────────────╯                                  │
 // │                                                                                                              │
 // │ Signatures:                                                                                                  │
-// │    RvDuHoQPrVgayccYtfrlLnp6TMuETxwpH1ZWgUu5a1EYZQeWgY6bb2VriSFl/KqBVx74EIGvhRNJR0n6dWEHAA==                  │
+// │    5S/cliEZqmNhlAiS8/2p3x7oAdIYbQxTszg/BTvcv4Yydbrhvqbq610RN5V2jBbSKZ7z6FWxjNDOh/QQcZcDAw==                  │
 // │                                                                                                              │
 // ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 // ╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
 // │ Transaction Effects                                                                               │
 // ├───────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │ Digest: BNbtgzKcM4h6Ay99EcUpnZLaz9CPVyV7pfYEFByJXgAG                                              │
+// │ Digest: 8NyN5YVWZ2Wh4DEgL3BiQ8ihh37XpXAZJ5cnbT8JEp6m                                              │
 // │ Status: Success                                                                                   │
 // │ Executed Epoch: 362                                                                               │
 // │                                                                                                   │
 // │ Created Objects:                                                                                  │
 // │  ┌──                                                                                              │
-// │  │ ID: 0x2243296b7a061ba47b847da59eb43b800fa35cbbd4de76633f6b4d7da6be7565                         │
-// │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789969                                                                             │
-// │  │ Digest: ABLm9rRS93nrV3fc2LbNkm9HzEgkFRQSZGb6uTPjMRke                                           │
-// │  └──                                                                                              │
-// │  ┌──                                                                                              │
-// │  │ ID: 0x593f383134f8a2f80009e0e60867a0ffdeafeb47bcfa38e31c4456f2c53d9316                         │
-// │  │ Owner: Shared( 481789969 )                                                                     │
-// │  │ Version: 481789969                                                                             │
-// │  │ Digest: DHNYGET6HspXS1VbMqKVDvFroiYevzgq8rMpQ9MiKngH                                           │
-// │  └──                                                                                              │
-// │  ┌──                                                                                              │
-// │  │ ID: 0x6654274feb9d713b1f295bf8f59260e093e07f0ef06d088fce908dcb59182a8d                         │
+// │  │ ID: 0x2b78041af4990d5b538fdf760bae7d27fb0d7a92a7cb596049c0dc055bb37bde                         │
 // │  │ Owner: Immutable                                                                               │
 // │  │ Version: 1                                                                                     │
-// │  │ Digest: 26i7gW3hkgcYViaF1tEAgRSGgU8iegvAh7BgUViS1urS                                           │
+// │  │ Digest: FWGjQaMP6RQSurALWNUi7ypu7jRjnLVNnHm3X1h4iNjo                                           │
+// │  └──                                                                                              │
+// │  ┌──                                                                                              │
+// │  │ ID: 0x3bc7b2ddc80f53e0bd3a5079b65dd418348f5a26a2e813be7300968bcbe0107f                         │
+// │  │ Owner: Shared( 481789970 )                                                                     │
+// │  │ Version: 481789970                                                                             │
+// │  │ Digest: 5c4XGWrcHdwqsaxEAphWwJuX82pHsRWSfBZSKJZdCZb6                                           │
+// │  └──                                                                                              │
+// │  ┌──                                                                                              │
+// │  │ ID: 0x6a17cdaf8096eab38e253d79e0a67c9d7356a866a32dc9a2a15de66bc459bddf                         │
+// │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
+// │  │ Version: 481789970                                                                             │
+// │  │ Digest: A4qNyLqPLduTHxhs3Xdk1R4V8kjTR3oXDTVEPfvPYZvU                                           │
 // │  └──                                                                                              │
 // │ Mutated Objects:                                                                                  │
 // │  ┌──                                                                                              │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                         │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789969                                                                             │
-// │  │ Digest: BC4MjzW6sAhfSeUe9g7CzvtAQiFBEsjVb1FrUeHzBkc2                                           │
+// │  │ Version: 481789970                                                                             │
+// │  │ Digest: F9PrHqqxXaXtNfDw7UGPX7H5G64k3nfgFyiKrdbRLXAc                                           │
 // │  └──                                                                                              │
 // │ Gas Object:                                                                                       │
 // │  ┌──                                                                                              │
 // │  │ ID: 0xbe43ef2f3241a9936732bbc47c5de5f875b86412ae0355f5705704e961ff9278                         │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 )  │
-// │  │ Version: 481789969                                                                             │
-// │  │ Digest: BC4MjzW6sAhfSeUe9g7CzvtAQiFBEsjVb1FrUeHzBkc2                                           │
+// │  │ Version: 481789970                                                                             │
+// │  │ Digest: F9PrHqqxXaXtNfDw7UGPX7H5G64k3nfgFyiKrdbRLXAc                                           │
 // │  └──                                                                                              │
 // │ Gas Cost Summary:                                                                                 │
 // │    Storage Cost: 62206000 NANOS                                                                   │
@@ -97,8 +96,8 @@ export const MODULE = "dao";
 // │    Non-refundable Storage Fee: 0 NANOS                                                            │
 // │                                                                                                   │
 // │ Transaction Dependencies:                                                                         │
+// │    BNbtgzKcM4h6Ay99EcUpnZLaz9CPVyV7pfYEFByJXgAG                                                   │
 // │    CY14gCcLcVuSMN9Hq7Ya6vEhBAzSzciNw47togWXJAZ8                                                   │
-// │    GiQFNViPQhSLBQGAV1apEToAer4B26vs4CoLDQRLpQuy                                                   │
 // ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
 // ╭─────────────────────────────╮
 // │ No transaction block events │
@@ -109,20 +108,20 @@ export const MODULE = "dao";
 // ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
 // │ Created Objects:                                                                                 │
 // │  ┌──                                                                                             │
-// │  │ ObjectID: 0x2243296b7a061ba47b847da59eb43b800fa35cbbd4de76633f6b4d7da6be7565                  │
+// │  │ ObjectID: 0x3bc7b2ddc80f53e0bd3a5079b65dd418348f5a26a2e813be7300968bcbe0107f                  │
+// │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
+// │  │ Owner: Shared( 481789970 )                                                                    │
+// │  │ ObjectType: 0x2b78041af4990d5b538fdf760bae7d27fb0d7a92a7cb596049c0dc055bb37bde::dao::State    │
+// │  │ Version: 481789970                                                                            │
+// │  │ Digest: 5c4XGWrcHdwqsaxEAphWwJuX82pHsRWSfBZSKJZdCZb6                                          │
+// │  └──                                                                                             │
+// │  ┌──                                                                                             │
+// │  │ ObjectID: 0x6a17cdaf8096eab38e253d79e0a67c9d7356a866a32dc9a2a15de66bc459bddf                  │
 // │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 ) │
 // │  │ ObjectType: 0x2::package::UpgradeCap                                                          │
-// │  │ Version: 481789969                                                                            │
-// │  │ Digest: ABLm9rRS93nrV3fc2LbNkm9HzEgkFRQSZGb6uTPjMRke                                          │
-// │  └──                                                                                             │
-// │  ┌──                                                                                             │
-// │  │ ObjectID: 0x593f383134f8a2f80009e0e60867a0ffdeafeb47bcfa38e31c4456f2c53d9316                  │
-// │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
-// │  │ Owner: Shared( 481789969 )                                                                    │
-// │  │ ObjectType: 0x6654274feb9d713b1f295bf8f59260e093e07f0ef06d088fce908dcb59182a8d::dao::State    │
-// │  │ Version: 481789969                                                                            │
-// │  │ Digest: DHNYGET6HspXS1VbMqKVDvFroiYevzgq8rMpQ9MiKngH                                          │
+// │  │ Version: 481789970                                                                            │
+// │  │ Digest: A4qNyLqPLduTHxhs3Xdk1R4V8kjTR3oXDTVEPfvPYZvU                                          │
 // │  └──                                                                                             │
 // │ Mutated Objects:                                                                                 │
 // │  ┌──                                                                                             │
@@ -130,14 +129,14 @@ export const MODULE = "dao";
 // │  │ Sender: 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2                    │
 // │  │ Owner: Account Address ( 0xe0d8397bdb43bd3a194a6941ebbb7afbb90767ef6bcf5864fd547cb1a70bddb2 ) │
 // │  │ ObjectType: 0x2::coin::Coin<0x2::iota::IOTA>                                                  │
-// │  │ Version: 481789969                                                                            │
-// │  │ Digest: BC4MjzW6sAhfSeUe9g7CzvtAQiFBEsjVb1FrUeHzBkc2                                          │
+// │  │ Version: 481789970                                                                            │
+// │  │ Digest: F9PrHqqxXaXtNfDw7UGPX7H5G64k3nfgFyiKrdbRLXAc                                          │
 // │  └──                                                                                             │
 // │ Published Objects:                                                                               │
 // │  ┌──                                                                                             │
-// │  │ PackageID: 0x6654274feb9d713b1f295bf8f59260e093e07f0ef06d088fce908dcb59182a8d                 │
+// │  │ PackageID: 0x2b78041af4990d5b538fdf760bae7d27fb0d7a92a7cb596049c0dc055bb37bde                 │
 // │  │ Version: 1                                                                                    │
-// │  │ Digest: 26i7gW3hkgcYViaF1tEAgRSGgU8iegvAh7BgUViS1urS                                          │
+// │  │ Digest: FWGjQaMP6RQSurALWNUi7ypu7jRjnLVNnHm3X1h4iNjo                                          │
 // │  │ Modules: dao                                                                                  │
 // │  └──                                                                                             │
 // ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯

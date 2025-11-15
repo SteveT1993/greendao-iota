@@ -54,7 +54,7 @@ export default function Profile() {
 				} catch (e) { console.error('get_all_ideas proxy error', e); return []; }
 			},
 			_donated: async (addr) => {
-				// not directly available from IOTA context; return 0 as fallback
+				
 				return 0;
 			},
 			_user_badges: async (addr) => {
@@ -145,7 +145,7 @@ export default function Profile() {
 		//Fetching data from Smart contract
 		let allDaos = await contract.get_all_daos();
 		let allIdeas = await contract.get_all_ideas();
-		let donated = Number(await contract._donated(address.toLocaleLowerCase())) / 1e9;
+		let donated = 0;
 
 		const fetchedBadges = await contract._user_badges(address);
 		const defaultBadges = {
@@ -198,10 +198,13 @@ export default function Profile() {
 
 
 		let _donations_ids = await contract._donations_ids();
+		
 		let ideasURIS = [];
 		for (let i = 0; i < _donations_ids; i++) {
 			let donationURI = await contract._donations(i);
 			if (donationURI.wallet.toLocaleLowerCase() == address.toLocaleLowerCase()) {
+				
+				donated += ParseBigNumber(Number(donationURI.donation));
 				let existsIdea = ideasURIS.findIndex(e => e.id == Number(donationURI.ideas_id));
 				if (existsIdea != -1) {
 					ideasURIS[existsIdea].donation += ParseBigNumber(Number(donationURI.donation));

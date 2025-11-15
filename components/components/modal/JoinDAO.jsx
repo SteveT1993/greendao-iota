@@ -24,7 +24,8 @@ export default function JoinDAO({ Amount, show, onHide, address, title, dao_id }
     const [Token, setToken] = useState("");
     const [isLoading, setisLoading] = useState(false);
     const [isSent, setisSent] = useState(false);
-    const { Balance: IotaBalance, getAllDaos, currentWalletAddress, sendTransaction, sleep } = useIOTA();
+    const { Balance: IotaBalance, getAllDaos, sendNative,WrapBigNumber,currentWalletAddress, sendTransaction, sleep } = useIOTA();
+
 
     let alertBox = null;
     const [transaction, setTransaction] = useState({

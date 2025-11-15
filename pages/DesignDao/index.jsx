@@ -98,6 +98,7 @@ export default function DesignDao() {
     const _typed = grapesjs_typed.default || grapesjs_typed;
     const _stylebg = grapesjs_style_bg.default || grapesjs_style_bg;
 
+    const _basic = gjs_blocks_basic.default || gjs_blocks_basic;
 
     
 
@@ -370,7 +371,7 @@ export default function DesignDao() {
     _typed,
     _stylebg,
 
-
+_basic
        
 
       ],
