@@ -42,8 +42,8 @@ export default function Goal() {
 	// use shared sleep helper from IOTA context
 
 	useEffect(() => {
-		if (contract && goalId >= 0) fetchContractData()
-	}, [contract, goalId])
+		if (contract && goalId >= 0 && currentWalletAddress != null) fetchContractData()
+	}, [contract, goalId,currentWalletAddress])
 	useEffect(() => {
 		const timer = setInterval(() => {
 			calculateTimeLeft()
@@ -95,10 +95,9 @@ useEffect(() => {
 		//Fetching data from Smart contract
 		setRunning(true)
 		try {
-			if (contract && goalId >= 0) {
+			if (contract && goalId >= 0 && currentWalletAddress != null) {
 				const goalURI = JSON.parse(await getGoalUri(Number(goalId))) //Getting total goal (Number)
 				const totalIdeas = await getAllIdeasByGoalId(Number(goalId)) //Getting total goal (Number)
-				console.log("all Ideas", totalIdeas);
 				const arr = []
 				for (let i = 0; i < (totalIdeas).length; i++) {
 					//total goal number Iteration

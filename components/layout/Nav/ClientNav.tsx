@@ -8,7 +8,7 @@ import { useIotaClientQuery } from '@iota/dapp-kit';
 import { useIOTA } from "../../../contexts/IOTAContext";
 declare let window: any;
 let running = false;
-
+let lastConnected =false;
 export default function ClientNav() {
   const { ParseBigNumber, WrapBigNumber, Balance, currentWalletAddress } = useIOTA();
   const [acc, setAcc] = useState('');
@@ -19,10 +19,13 @@ export default function ClientNav() {
   const wallets = useWallets();
 
   async function fetchInfo() {
+    if (!lastConnected){
         try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
       try { document.getElementById("installIota")!.style.display = "none"; } catch { }
 
+
+    }
     if (window.localStorage.getItem("login-type") === "iota") {
       try {
         // If there's already a current account, use it
@@ -35,6 +38,7 @@ export default function ClientNav() {
           try { document.getElementById("withSign")!.style.display = ""; } catch { }
           running = false;
           setSigned(true);
+          lastConnected=true;
           return;
         }
 
@@ -45,10 +49,13 @@ export default function ClientNav() {
         return;
       }
     } else {
+      if(!lastConnected){
 
       try { document.getElementById("withoutSign")!.style.display = ""; } catch { }
       try { document.getElementById("withSign")!.style.display = "none"; } catch { }
+      }
     }
+    if (!lastConnected)
     setSigned(false);
     running = false;
   }
